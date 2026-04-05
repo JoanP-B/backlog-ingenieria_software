@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Matcher - Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Simple Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="profile-section">
+                <div class="avatar">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <h2>Mi Perfil</h2>
+            </div>
+            
+            <form id="profile-form" class="config-form">
+                <div class="form-group">
+                    <label><i class="fa-solid fa-location-dot"></i> Ubicación</label>
+                    <input type="text" id="user-location" value="Medellín, Colombia">
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-money-bill"></i> Salario Esperado (COP)</label>
+                    <input type="number" id="user-salary" value="3000000">
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-code"></i> Mis Skills</label>
+                    <textarea id="user-skills" rows="3">Python, SQL, Linux, Soporte, Redes</textarea>
+                </div>
+                <button type="button" class="btn-primary w-100" onclick="refreshRanking()">
+                    Actualizar Perfil
+                </button>
+            </form>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div>
+                    <h1>Vacantes recomendadas para ti</h1>
+                    <p class="subtitle">Basado en tus preferencias y habilidades</p>
+                </div>
+                <button class="btn-outline" onclick="refreshRanking()">
+                    <i class="fa-solid fa-rotate-right"></i> Refresh
+                </button>
+            </header>
+
+            <div class="ranking-grid" id="ranking-grid">
+                <!-- Tarjetas dinámicas generadas por JS -->
+            </div>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+{
+  "name": "Job Matcher MVP Flow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "job-match",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "webhook-job-match-uuid"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/score",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "candidate",
+              "value": "={{$node[\"Webhook\"].json[\"body\"][\"candidate\"]}}"
+            },
+            {
+              "name": "job",
+              "value": "={{$node[\"Webhook\"].json[\"body\"][\"job\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Call FastAPI Scoring",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        450,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Call FastAPI Scoring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {}
+}
