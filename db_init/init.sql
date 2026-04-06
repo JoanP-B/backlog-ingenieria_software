@@ -23,6 +23,16 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Usuario inicial de prueba para autenticación
+INSERT INTO users (username, email, hashed_password, is_active)
+VALUES (
+    'svasquezs1',
+    'svasquezs1@example.com',
+    '$2b$12$37Hg7g.CE7gmNtgpIQJEPeAidfk6Vgz1ks0/rZSs4GAzU.RADIjZG',
+    TRUE
+)
+ON CONFLICT DO NOTHING;
+
 -- Tabla para candidatos
 CREATE TABLE IF NOT EXISTS candidates (
     id VARCHAR(255) PRIMARY KEY,
