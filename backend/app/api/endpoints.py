@@ -33,8 +33,9 @@ async def login_for_access_token(
 
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario no encontrado."
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Correo o contraseña incorrectos. Intente nuevamente.",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not security.verify_password(password, user.hashed_password):
