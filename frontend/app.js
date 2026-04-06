@@ -1,206 +1,102 @@
-const dbVacantes = [
-    {
-        id: "v1",
-        empresa: "EPM",
-        titulo: "Técnico Auxiliar de Sistemas",
-        ubicacion: "Medellín, Colombia",
-        salarioCOP: 3500000,
-        req_skills: ["Soporte", "Redes", "Linux", "Windows Server"]
-    },
-    {
-        id: "v2",
-        empresa: "Bancolombia",
-        titulo: "Desarrollador Junior",
-        ubicacion: "Remoto, Colombia",
-        salarioCOP: 5000000,
-        req_skills: ["Python", "SQL", "Git", "Backend"]
-    },
-    {
-        id: "v3",
-        empresa: "Globant",
-        titulo: "Tech Support Nivel 2",
-        ubicacion: "Bogotá, Colombia",
-        salarioCOP: 3000000,
-        req_skills: ["Soporte", "Atención al cliente", "Inglés"]
-    },
-    {
-        id: "v4",
-        empresa: "Nubank",
-        titulo: "Data Engineer Associate",
-        ubicacion: "Remoto",
-        salarioCOP: 6000000,
-        req_skills: ["Python", "SQL", "Cloud", "ETL"]
-    }
-];
+const loginForm = document.getElementById("login-form");
+const identifierInput = document.getElementById("login-identifier");
+const passwordInput = document.getElementById("login-password");
+const registerLink = document.getElementById("register-link");
+const loginMessage = document.getElementById("login-message");
 
-const TASA_CAMBIO = 4000; // 1 USD = 4000 COP aprox
-
-function formatearCOP(valor) {
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valor);
+function showMessage(message) {
+    loginMessage.textContent = message;
+    loginMessage.classList.add("is-visible");
 }
 
-function formatearUSD(valor) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(valor / TASA_CAMBIO);
+function clearMessage() {
+    loginMessage.textContent = "";
+    loginMessage.classList.remove("is-visible");
 }
 
-function calcularScore(vacante, perfil) {
-    const pUbicacion = perfil.ubicacion.toLowerCase();
-    const vUbicacion = vacante.ubicacion.toLowerCase();
-
-    let score = 40; // Base score general
-
-    // Ubicacion Match (+20)
-    if (vUbicacion.includes(pUbicacion) || vUbicacion.includes("remoto") || pUbicacion.includes(vUbicacion)) {
-        score += 20;
-    }
-
-    // Salario Match (+15 / -10)
-    if (perfil.salario <= vacante.salarioCOP) {
-        score += 15;
-    } else {
-        score -= 10;
-    }
-
-    // Skills Match (+25)
-    const perfilSkills = perfil.skills.split(',').map(s => s.trim().toLowerCase());
-    const vacanteSkills = vacante.req_skills.map(s => s.toLowerCase());
-
-    let matchCount = 0;
-    vacanteSkills.forEach(req => {
-        if (perfilSkills.some(ps => ps.includes(req) || req.includes(ps))) {
-            matchCount++;
-        }
-    });
-
-    const skillScore = (matchCount / vacanteSkills.length) * 25;
-    score += skillScore;
-
-    return Math.min(Math.max(Math.round(score), 0), 100);
+function clearFieldErrors() {
+    identifierInput.classList.remove("input-error");
+    passwordInput.classList.remove("input-error");
 }
 
-function getScoreClass(score) {
-    if (score >= 80) return "score-high";
-    if (score >= 60) return "score-med";
-    return "score-low";
+function setFieldError(input) {
+    input.classList.add("input-error");
+    input.focus();
 }
 
-function refreshRanking() {
-    const btn = document.querySelector('.btn-outline i');
-    if (btn) btn.classList.add('fa-spin'); // Agrega rotación simple al icono
-
-    const perfil = {
-        ubicacion: document.getElementById('user-location').value,
-        salario: parseInt(document.getElementById('user-salary').value) || 0,
-        skills: document.getElementById('user-skills').value
-    };
-
-    // Calcular puntajes simulando la lógica (que en el futuro conectará en el backend completo)
-    const vacantesEvaluadas = dbVacantes.map(v => {
-        return { ...v, score: calcularScore(v, perfil) };
-    }).sort((a, b) => b.score - a.score);
-
-    setTimeout(() => {
-        renderGrid(vacantesEvaluadas);
-        if (btn) btn.classList.remove('fa-spin');
-    }, 400); // Pequeño delay simulando carga web
-}
-
-function renderGrid(vacantes) {
-    const grid = document.getElementById('ranking-grid');
-    grid.innerHTML = '';
-
-    vacantes.forEach(v => {
-        const scoreClass = getScoreClass(v.score);
-
-        const card = document.createElement('div');
-        card.className = `job-card ${scoreClass}`;
-
-        card.innerHTML = `
-            <div class="card-header">
-                <div>
-                    <h3 class="job-title">${v.titulo}</h3>
-                    <p class="company-name"><i class="fa-regular fa-building"></i> ${v.empresa}</p>
-                </div>
-                <div class="score-badge">${v.score}/100</div>
-            </div>
-            
-            <div class="job-details">
-                <div class="detail-item">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <span>${v.ubicacion}</span>
-                </div>
-                <div class="detail-item">
-                    <i class="fa-solid fa-money-bill-wave"></i>
-                    <span class="salary-tag">${formatearCOP(v.salarioCOP)} <span class="usd-tag">${formatearUSD(v.salarioCOP)}</span></span>
-                </div>
-            </div>
-            
-            <div class="card-actions">
-                <button class="btn-primary w-100" onclick="aplicarVacante('${v.id}')">
-                    <span id="btn-text-${v.id}">Aplicar (Mandar a n8n)</span>
-                </button>
-            </div>
-        `;
-        grid.appendChild(card);
+if (registerLink) {
+    registerLink.addEventListener("click", (event) => {
+        event.preventDefault();
+        alert("La pantalla de registro se implementará en un siguiente paso.");
     });
 }
 
-async function aplicarVacante(id) {
-    const btnText = document.getElementById(`btn-text-${id}`);
-    const originalText = btnText.innerHTML;
-    btnText.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando en n8n...';
+if (loginForm) {
+    loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-    const vacante = dbVacantes.find(v => v.id === id);
-    const perfil = {
-        ubicacion: document.getElementById('user-location').value,
-        salario: parseInt(document.getElementById('user-salary').value) || 0,
-        skills: document.getElementById('user-skills').value,
-        name: "Usuario Candidato"
-    };
+        clearMessage();
+        clearFieldErrors();
 
-    const payload = {
-        candidate: {
-            id: "user_simulado",
-            name: perfil.name,
-            skills: perfil.skills.split(',').map(s => s.trim()),
-            experience_years: 3
-        },
-        job: {
-            id: vacante.id,
-            title: vacante.titulo,
-            required_skills: vacante.req_skills,
-            min_experience_years: 2
+        const usernameOrEmail = identifierInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!usernameOrEmail || !password) {
+            const errorMessage = "Favor ingresar información válida en los campos obligatorios.";
+
+            showMessage(errorMessage);
+            alert(errorMessage);
+
+            if (!usernameOrEmail) {
+                setFieldError(identifierInput);
+            } else {
+                setFieldError(passwordInput);
+            }
+
+            return;
         }
-    };
 
-    try {
-        // En n8n "Test Workflow" escucha en /webhook-test/ y si está Activo en /webhook/
-        let response = await fetch('http://localhost:5678/webhook-test/job-match', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            response = await fetch('http://localhost:5678/webhook/job-match', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+        try {
+            const response = await fetch("http://localhost:8000/token", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: new URLSearchParams({
+                    username: usernameOrEmail,
+                    password: password
+                })
             });
-        }
 
-        if (response.ok) {
             const data = await response.json();
-            alert(`¡Completado!\n\nDatos recuperados desde API (via n8n):\n✅ Score final del candidato: ${data.score}%\n✅ Empresa: ${vacante.empresa}`);
-        } else {
-            alert("Error: Asegúrate de darle click a 'Test Workflow' en n8n y luego darle a este botón.");
+
+            if (response.ok) {
+                localStorage.setItem("access_token", data.access_token);
+                localStorage.setItem("token_type", data.token_type);
+
+                showMessage("Inicio de sesión exitoso. Redirigiendo...");
+                window.location.href = "dashboard.html";
+                return;
+            }
+
+            if (response.status === 404) {
+                showMessage("Usuario no encontrado.");
+                return;
+            }
+
+            if (response.status === 401) {
+                showMessage("Correo o contraseña incorrectos. Intente nuevamente.");
+                return;
+            }
+
+            if (response.status === 400) {
+                showMessage("Favor ingresar información válida en los campos obligatorios.");
+                return;
+            }
+
+            showMessage(data.detail || "Ocurrió un error al iniciar sesión.");
+        } catch (error) {
+            showMessage("No fue posible conectar con el servidor. Intente nuevamente.");
         }
-    } catch (e) {
-        alert("Error de comunicación con n8n. ¿Aseguraste darle a 'Test workflow' en n8n?");
-    }
-
-    btnText.innerHTML = originalText;
+    });
 }
-
-// Inicializar renderizando el primer ranking
-window.onload = refreshRanking;
