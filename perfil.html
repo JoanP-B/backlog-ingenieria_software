@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil Profesional | Job Matcher</title>
+    <link rel="stylesheet" href="perfil.css">
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="logo">PORTAL EMPLEO</div>
+        <a href="vistaPrincipal.html" class="btn-back">Volver al Inicio</a>
+    </header>
+
+    <main class="container">
+        <section class="form-card">
+            <h1>Registro de Perfil Profesional</h1>
+            <p class="subtitle">La información proporcionada se usará para el scoring de vacantes.</p>
+
+            <form id="profileForm" novalidate>
+                <div class="form-section">
+                    <h2>Información Personal</h2>
+                    <div class="grid-inputs">
+                        <div class="input-group">
+                            <label for="fullName">Nombre Completo *</label>
+                            <input type="text" id="fullName" name="fullName" placeholder="Ej: Juan Pérez" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="email">Correo Electrónico *</label>
+                            <input type="email" id="email" name="email" placeholder="Ej: juan.perez@empresa.com" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="phone">Número de Teléfono *</label>
+                            <input type="tel" id="phone" name="phone" placeholder="Ej: +57 300..." required>
+                        </div>
+                        <div class="input-group">
+                            <label for="address">Dirección de Vivienda *</label>
+                            <input type="text" id="address" name="address" placeholder="Ej: Cra 123 #45-67" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="birthDate">Fecha de Nacimiento *</label>
+                            <input type="date" id="birthDate" name="birthDate" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="gender">Género *</label>
+                            <select id="gender" name="gender" required>
+                                <option value="" disabled selected>Seleccione</option>
+                                <option value="masculino">Masculino</option>
+                                <option value="femenino">Femenino</option>
+                                <option value="otro">Otro</option>
+                                <option value="prefiero-no-decir">Prefiero no decirlo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2>Preferencias de Empleo</h2>
+                    <div class="grid-inputs">
+                        <div class="input-group">
+                            <label for="salary">Salario Mensual Esperado (COP) *</label>
+                            <input type="number" id="salary" name="salary" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="workMode">Modalidad preferida *</label>
+                            <select id="workMode" name="workMode" required>
+                                <option value="" disabled selected>Seleccione</option>
+                                <option value="remoto">Remoto</option>
+                                <option value="hibrido">Híbrido</option>
+                                <option value="presencial">Presencial</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="experience_years">Años de Experiencia *</label>
+                            <input type="number" id="experience_years" name="experience_years" min="0" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="jobCategory">Área de interés *</label>
+                            <input type="text" id="jobCategory" name="jobCategory" placeholder="Ej. Tecnología, Ventas" required>
+                        </div>
+                    </div>
+                        
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2>Formación y Experiencia</h2>
+                    <div class="input-group">
+                        <label for="education">Formación Académica *</label>
+                        <textarea id="education" name="education" rows="2" required></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label for="experience">Experiencia Laboral *</label>
+                        <textarea id="experience" name="experience" rows="2" required></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label for="skills">Habilidades (Separadas por comas) *</label>
+                        <input type="text" id="skills" name="skills" placeholder="Ej: Python, Liderazgo, SQL" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="summary">Descripción Profesional *</label>
+                        <textarea id="summary" name="summary" rows="3" required></textarea>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2>Hoja de Vida Física</h2>
+                    <div class="input-group">
+                        <label for="cvFile">Adjuntar CV (PDF, DOCX) *</label>
+                        <div class="custom-file-upload">
+                            <input type="file" id="cvFile" name="cvFile" accept=".pdf,.docx" required>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Finalizar Registro</button>
+            </form>
+        </section>
+    </main>
+
+    <script src="perfil.js"></script>
+</body>
+</html>
