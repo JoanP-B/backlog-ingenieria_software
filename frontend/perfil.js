@@ -1,6 +1,6 @@
-document.getElementById('profileForm').addEventListener('submit', function(e) {
+document.getElementById('profileForm').addEventListener('submit', function (e) {
     e.preventDefault();
-    
+
     const fields = this.querySelectorAll('[required]');
     let isValid = true;
     let firstErrorField = null;
@@ -25,6 +25,7 @@ document.getElementById('profileForm').addEventListener('submit', function(e) {
         firstErrorField.focus();
     } else {
         alert("Perfil profesional guardado con éxito. Iniciando scoring de vacantes...");
-        // Aquí se enviaría a la base de datos PostgreSQL mediante una API
+        // Redirigimos automáticamente al dashboard / vista principal
+        window.location.href = "dashboard.html";
     }
 });
