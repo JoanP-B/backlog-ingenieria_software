@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registro — Plataforma de Vacantes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #F5F2ED;
+      --surface:   #FFFFFF;
+      --ink:       #1A1814;
+      --muted:     #7A776F;
+      --accent:    #2015db;
+      --accent-lt: #080909;
+      --danger:    #C0392B;
+      --danger-lt: #FDECEA;
+      --border:    #E0DDD6;
+      --radius:    12px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .wrapper {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 860px;
+      width: 100%;
+      background: var(--surface);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+    }
+
+    /* ── Panel izquierdo ── */
+    .panel-left {
+      background:#2015bd;
+      padding: 3rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+    .panel-left::before {
+      content: '';
+      position: absolute;
+      width: 320px; height: 320px;
+      border-radius: 50%;
+      border: 60px solid rgba(255,255,255,0.07);
+      bottom: -80px; right: -80px;
+    }
+    .panel-left::after {
+      content: '';
+      position: absolute;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      border: 40px solid rgba(255,255,255,0.05);
+      top: -40px; left: -40px;
+    }
+    .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.6rem;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+    .logo span { opacity: 0.6; font-size: 1rem; display: block; font-family: 'DM Sans', sans-serif; font-weight: 300; margin-top: 4px; }
+
+    .panel-copy { position: relative; z-index: 1; }
+    .panel-copy h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2rem;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+    .panel-copy p { color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 1.6; }
+
+    .panel-login { position: relative; z-index: 1; }
+    .panel-login p { color: rgba(255,255,255,0.65); font-size: 0.85rem; }
+    .panel-login a {
+      color: #fff;
+      font-weight: 500;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    /* ── Panel derecho ── */
+    .panel-right { padding: 3rem 2.5rem; }
+
+    .panel-right h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.75rem;
+      color: var(--ink);
+      margin-bottom: 0.4rem;
+    }
+    .panel-right > p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+
+    .form-group { margin-bottom: 1.25rem; }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      color: var(--ink);
+      background: #FAFAF8;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(42,92,69,0.1);
+      background: #fff;
+    }
+    input.error { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(192,57,43,0.08); }
+
+    .hint {
+      font-size: 0.78rem;
+      margin-top: 5px;
+      color: var(--danger);
+      display: none;
+    }
+    .hint.show { display: block; }
+
+    .password-wrap { position: relative; }
+    .toggle-pw {
+      position: absolute;
+      right: 12px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 0.8rem; font-family: 'DM Sans', sans-serif;
+      padding: 4px 6px;
+    }
+    .toggle-pw:hover { color: var(--accent); }
+
+    .strength-bar {
+      display: flex; gap: 4px; margin-top: 8px;
+    }
+    .strength-bar span {
+      flex: 1; height: 3px; border-radius: 2px;
+      background: var(--border); transition: background 0.3s;
+    }
+    .strength-bar.weak span:nth-child(1) { background: var(--danger); }
+    .strength-bar.fair span:nth-child(1),
+    .strength-bar.fair span:nth-child(2) { background: #E8A317; }
+    .strength-bar.strong span { background: var(--accent); }
+
+    .strength-label { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+    .btn-submit {
+      width: 100%;
+      padding: 0.85rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: background 0.2s, transform 0.1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-submit:hover { background: #2920a0; }
+    .btn-submit:active { transform: scale(0.99); }
+    .btn-submit:disabled { background: #A8BDB5; cursor: not-allowed; }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .btn-submit.loading .spinner { display: block; }
+    .btn-submit.loading .btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toast {
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      margin-bottom: 1.25rem;
+      display: none;
+      line-height: 1.5;
+    }
+    .toast.success { background: var(--accent-lt); color: var(--accent); display: block; }
+    .toast.error   { background: var(--danger-lt); color: var(--danger); display: block; }
+
+    /* ── Responsive ── */
+    @media (max-width: 620px) {
+      .wrapper { grid-template-columns: 1fr; }
+      .panel-left { display: none; }
+      .panel-right { padding: 2rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- Izquierda -->
+  <div class="panel-left">
+    <div class="logo">
+      Workzy<span>Plataforma de empleo</span>
+    </div>
+    <div class="panel-copy">
+      <h2>Encuentra tu próxima oportunidad</h2>
+      <p>Conéctate con empresas que buscan tu talento. Crea tu perfil y empieza a aplicar hoy.</p>
+    </div>
+    <div class="panel-login">
+      <p>¿Ya tienes cuenta? <a href="index.html">Inicia sesión</a></p>
+    </div>
+  </div>
+
+  <!-- Derecha -->
+  <div class="panel-right">
+    <h1>Crear cuenta</h1>
+    <p>Completa los datos para registrarte.</p>
+
+    <div class="toast" id="toast"></div>
+
+    <form id="registerForm" novalidate>
+
+      <div class="form-group">
+        <label for="nombre">Nombre completo</label>
+        <input type="text" id="nombre" name="nombre_completo"
+               placeholder="Ej: María Gómez" autocomplete="name" />
+        <p class="hint" id="hint-nombre">Ingresa al menos 3 caracteres.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="correo">Correo electrónico</label>
+        <input type="email" id="correo" name="correo"
+               placeholder="correo@ejemplo.com" autocomplete="email" />
+        <p class="hint" id="hint-correo">Ingresa un correo válido.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="contrasena">Contraseña</label>
+        <div class="password-wrap">
+          <input type="password" id="contrasena" name="contrasena"
+                 placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+          <button type="button" class="toggle-pw" id="togglePw">Mostrar</button>
+        </div>
+        <div class="strength-bar" id="strengthBar">
+          <span></span><span></span><span></span>
+        </div>
+        <p class="strength-label" id="strengthLabel"></p>
+        <p class="hint" id="hint-contrasena">La contraseña debe tener al menos 8 caracteres.</p>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">
+        <span class="btn-text">Crear cuenta</span>
+        <span class="spinner"></span>
+      </button>
+
+    </form>
+  </div>
+
+</div>
+
+<script>
+  const API_URL = 'http://localhost:8000/api/registro';
+
+  const form      = document.getElementById('registerForm');
+  const toast     = document.getElementById('toast');
+  const submitBtn = document.getElementById('submitBtn');
+  const togglePw  = document.getElementById('togglePw');
+  const pwInput   = document.getElementById('contrasena');
+  const strengthBar   = document.getElementById('strengthBar');
+  const strengthLabel = document.getElementById('strengthLabel');
+
+  // --- Mostrar / ocultar contraseña ---
+  togglePw.addEventListener('click', () => {
+    const show = pwInput.type === 'password';
+    pwInput.type = show ? 'text' : 'password';
+    togglePw.textContent = show ? 'Ocultar' : 'Mostrar';
+  });
+
+  // --- Indicador de fortaleza ---
+  pwInput.addEventListener('input', () => {
+    const v = pwInput.value;
+    let score = 0;
+    if (v.length >= 8) score++;
+    if (/[A-Z]/.test(v) && /[0-9]/.test(v)) score++;
+    if (/[^A-Za-z0-9]/.test(v)) score++;
+
+    strengthBar.className = 'strength-bar';
+    if (v.length === 0) { strengthLabel.textContent = ''; return; }
+    if (score === 1) { strengthBar.classList.add('weak');   strengthLabel.textContent = 'Contraseña débil'; }
+    if (score === 2) { strengthBar.classList.add('fair');   strengthLabel.textContent = 'Contraseña moderada'; }
+    if (score === 3) { strengthBar.classList.add('strong'); strengthLabel.textContent = 'Contraseña fuerte'; }
+  });
+
+  // --- Validación ---
+  function validate() {
+    let ok = true;
+
+    const nombre = document.getElementById('nombre');
+    const correo = document.getElementById('correo');
+    const clave  = pwInput;
+
+    [nombre, correo, clave].forEach(el => el.classList.remove('error'));
+    document.querySelectorAll('.hint').forEach(h => h.classList.remove('show'));
+
+    if (nombre.value.trim().length < 3) {
+      nombre.classList.add('error');
+      document.getElementById('hint-nombre').classList.add('show');
+      ok = false;
+    }
+    const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRx.test(correo.value.trim())) {
+      correo.classList.add('error');
+      document.getElementById('hint-correo').classList.add('show');
+      ok = false;
+    }
+    if (clave.value.length < 8) {
+      clave.classList.add('error');
+      document.getElementById('hint-contrasena').classList.add('show');
+      ok = false;
+    }
+    return ok;
+  }
+
+  // --- Envío ---
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    toast.className = 'toast';
+
+    if (!validate()) return;
+
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+
+    const payload = {
+      nombre_completo: document.getElementById('nombre').value.trim(),
+      correo: document.getElementById('correo').value.trim(),
+      contrasena: pwInput.value
+    };
+
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.textContent = `¡Cuenta creada exitosamente! Bienvenido/a, ${data.nombre_completo}.`;
+        toast.className = 'toast success';
+        form.reset();
+        strengthBar.className = 'strength-bar';
+        strengthLabel.textContent = '';
+      } else {
+        toast.textContent = data.detail || 'Ocurrió un error. Intenta de nuevo.';
+        toast.className = 'toast error';
+      }
+
+    } catch (err) {
+      toast.textContent = 'No se pudo conectar con el servidor. Verifica que el backend esté activo.';
+      toast.className = 'toast error';
+    } finally {
+      submitBtn.classList.remove('loading');
+      submitBtn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>
