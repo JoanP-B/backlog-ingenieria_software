@@ -117,7 +117,7 @@ def calculate_score(request: ScoringRequest, db: Session = Depends(get_db)):
     )
 
 # --- Registration Refactored for PostgreSQL ---
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from passlib.context import CryptContext
 
@@ -125,7 +125,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class UsuarioRegistro(BaseModel):
     nombre_completo: str
-    correo: EmailStr
+    correo: str  # Cambiado temporalmente a str normal para evitar que falle por la libreria email-validator
     contrasena: str
 
 class UsuarioRespuesta(BaseModel):
