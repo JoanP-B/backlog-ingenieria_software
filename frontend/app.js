@@ -27,7 +27,7 @@ function setFieldError(input) {
 if (registerLink) {
     registerLink.addEventListener("click", (event) => {
         event.preventDefault();
-        alert("La pantalla de registro se implementará en un siguiente paso.");
+        window.location.href = "registro.html";
     });
 }
 
@@ -75,7 +75,7 @@ if (loginForm) {
                 localStorage.setItem("token_type", data.token_type);
 
                 showMessage("Inicio de sesión exitoso. Redirigiendo...");
-                window.location.href = "vistaprincipal.html";
+                window.location.href = "dashboard.html";
                 return;
             }
 
