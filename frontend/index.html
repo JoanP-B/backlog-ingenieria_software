@@ -1,57 +1,149 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Matcher - Iniciar sesión</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Workzy - Iniciar sesión</title>
+    <meta name="description" content="Accede a tu cuenta de Workzy para ver tus mejores matches de vacantes.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            dark: '#FEFEFE',
+                            panel: '#EBF0F4',
+                            border: '#334155',
+                            primary: '#10b981',
+                            hover: '#059669'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body>
-    <main class="login-page">
-        <section class="login-card">
-            <div class="login-header">
-                <h1>Iniciar sesión</h1>
-                <p>Accede a la plataforma para ver tus coincidencias de vacantes.</p>
+
+<body class="bg-brand-dark font-sans antialiased min-h-screen flex bg-grid">
+
+    <!-- Left Panel: Branding -->
+    <div
+        class="hidden lg:flex flex-col justify-between w-1/2 p-12 border-r border-brand-border/30 relative overflow-hidden">
+        <!-- Background blob -->
+        <div
+            class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-brand-primary/5 blur-3xl pointer-events-none">
+        </div>
+
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-brand-primary flex items-center justify-center">
+                <i class="fa-solid fa-bolt text-white text-sm"></i>
+            </div>
+            <span class="font-bold text-black text-xl">Workzy <span class="text-brand-primary">AI</span></span>
+        </div>
+
+        <div class="relative">
+            <h1 class="text-5xl font-black text-black leading-tight mb-6">
+                Tu próximo trabajo<br>te está <span class="gradient-text">esperando</span>
+            </h1>
+            <p class="text-[#A9B4B4] text-lg leading-relaxed mb-10">
+                Nuestra IA analiza tu perfil y te conecta directamente con las vacantes donde tienes mayor
+                compatibilidad.
+            </p>
+            <!-- Stats row -->
+            <div class="flex gap-8">
+                <div>
+                    <p class="text-3xl font-black text-white mb-1">94%</p>
+                    <p class="text-slate-500 text-sm">Tasa de precisión</p>
+                </div>
+                <div class="border-l border-brand-border/50 pl-8">
+                    <p class="text-3xl font-black text-white mb-1">+120</p>
+                    <p class="text-slate-500 text-sm">Vacantes activas</p>
+                </div>
+                <div class="border-l border-brand-border/50 pl-8">
+                    <p class="text-3xl font-black text-white mb-1">3s</p>
+                    <p class="text-slate-500 text-sm">Tiempo de análisis</p>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-slate-600 text-sm">
+            <i class="fa-solid fa-shield-halved text-brand-primary mr-2"></i>
+            Tus datos están encriptados y nunca serán compartidos.
+        </p>
+    </div>
+
+    <!-- Right Panel: Login Form -->
+    <div class="flex-1 flex items-center justify-center p-6">
+        <div class="w-full max-w-md">
+            <!-- Mobile logo -->
+            <div class="flex items-center gap-2 mb-10 lg:hidden">
+                <div class="w-8 h-8 rounded-lg bg-brand-primary flex items-center justify-center">
+                    <i class="fa-solid fa-bolt text-white text-sm"></i>
+                </div>
+                <span class="font-bold text-black text-xl">Workzy <span class="text-brand-primary">AI</span></span>
             </div>
 
-            <div id="login-message" class="login-message" role="alert" aria-live="polite"></div>
+            <h2 class="text-3xl font-bold text-black mb-2">Bienvenido de vuelta</h2>
+            <p class="text-[#A9B4B4] mb-8">Ingresa tus credenciales para ver tus matches</p>
 
-            <form id="login-form" class="login-form">
-                <div class="form-group">
-                    <label for="login-identifier">Nombre de usuario o correo</label>
-                    <input
-                        type="text"
-                        id="login-identifier"
-                        name="username"
-                        placeholder="Ingresa tu usuario o correo"
-                        autocomplete="username"
-                    >
+            <!-- Alert Message -->
+            <div id="login-message" class="hidden p-4 rounded-xl mb-6 text-sm text-center border" role="alert"></div>
+
+            <form id="login-form" class="space-y-5">
+                <div>
+                    <label for="login-identifier" class="block text-sm font-medium text-black-300 mb-2">
+                        <i class="fa-regular fa-user mr-2 text-black-500"></i>Usuario o Correo
+                    </label>
+                    <input type="text" id="login-identifier" name="username"
+                        placeholder="Tu usuario o correo electrónico" autocomplete="username"
+                        class="input-base w-full px-4 py-3.5 rounded-xl bg-brand-panel border border-brand-border text-black placeholder-black-500 focus:outline-none focus:border-brand-primary transition-all"
+                        required>
                 </div>
 
-                <div class="form-group">
-                    <label for="login-password">Contraseña</label>
-                    <input
-                        type="password"
-                        id="login-password"
-                        name="password"
-                        placeholder="Ingresa tu contraseña"
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="login-password" class="text-sm font-medium text-black-300">
+                            <i class="fa-solid fa-lock mr-2 text-black-500"></i>Contraseña
+                        </label>
+                    </div>
+                    <input type="password" id="login-password" name="password" placeholder="••••••••"
                         autocomplete="current-password"
-                    >
+                        class="input-base w-full px-4 py-3.5 rounded-xl bg-brand-panel border border-brand-border text-black placeholder-slate-500 focus:outline-none focus:border-brand-primary transition-all"
+                        required>
                 </div>
-                <a href="vistaPrincipal.html" class="ir a vista principal">
-                <button type="submit" class="btn-primary">Iniciar sesión</button>
-            </a>
-                
+
+                <button type="submit" id="login-btn"
+                    class="w-full bg-brand-primary hover:bg-brand-hover text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-[0_0_25px_rgba(16,185,129,0.25)] hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] transform hover:-translate-y-0.5 flex items-center justify-center gap-2 mt-2">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                    Iniciar Sesión
+                </button>
             </form>
 
-            <p class="register-text">
-                ¿No tienes cuenta? Créala
-                <a href="registro.html" id="register-link">Registrarse</a>
-            </p>
-        </section>
-    </main>
+            <div class="mt-6 pt-6 border-t border-brand-border/50 text-center">
+                <p class="text-slate-500 text-sm">
+                    ¿No tienes cuenta?
+                    <a href="registro.html"
+                        class="text-brand-primary hover:text-[#059669] font-semibold ml-1 transition-colors">Regístrate
+                        gratis</a>
+                </p>
+            </div>
+
+            <div class="mt-6 text-center">
+                <a href="vistaPrincipal.html" class="text-slate-600 hover:text-slate-400 text-sm transition-colors">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> Volver al inicio
+                </a>
+            </div>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
+
 </html>
