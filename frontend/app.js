@@ -75,7 +75,7 @@ if (loginForm) {
                 localStorage.setItem("token_type", data.token_type);
 
                 showMessage("Inicio de sesión exitoso. Redirigiendo...");
-                window.location.href = "dashboard.html";
+                window.location.href = "vistaPrincipal.html";
                 return;
             }
 
