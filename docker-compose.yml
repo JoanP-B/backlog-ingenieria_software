@@ -41,13 +41,27 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://${DB_USER:-jobmatcher}:${DB_PASSWORD:-secretpassword}@postgres:5432/${DB_NAME:-jobmatcher_db}
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-jobmatcher}:${DB_PASSWORD:-secretpassword}@postgres:5432/${DB_NAME:-jobmatcher_db}
       - JWT_SECRET=${JWT_SECRET:-supersecretkey_for_jwt}
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - ./backend:/app
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: job_matcher_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@jobmatcher.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   frontend:
     image: nginx:alpine
@@ -60,3 +74,4 @@ services:
 volumes:
   postgres_data:
   n8n_data:
+  pgadmin_data:

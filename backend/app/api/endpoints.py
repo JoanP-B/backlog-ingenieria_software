@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from datetime import timedelta
 
 from app.core import security
@@ -16,7 +17,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     username_or_email = form_data.username.strip()
     password = form_data.password
@@ -27,9 +28,10 @@ async def login_for_access_token(
             detail="Favor ingresar información válida en los campos obligatorios."
         )
 
-    user = db.query(User).filter(
-        (User.username == username_or_email) | (User.email == username_or_email)
-    ).first()
+    result = await db.execute(
+        select(User).filter((User.username == username_or_email) | (User.email == username_or_email))
+    )
+    user = result.scalars().first()
 
     if user is None:
         raise HTTPException(
@@ -73,48 +75,51 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
 # --- Scoring ---
 @router.post("/score", response_model=ScoringResponse)
-def calculate_score(request: ScoringRequest, db: Session = Depends(get_db)):
-    # Deshabilitado Depends(get_current_user) temporalmente para facilitar la prueba n8n MVP
-    candidate = request.candidate
-    job = request.job
+async def calculate_score(request: ScoringRequest, db: AsyncSession = Depends(get_db)):
+    try:
+        candidate = request.candidate
+        job = request.job
 
-    skill_match_count = sum(1 for skill in candidate.skills if skill in job.required_skills)
-    total_required = len(job.required_skills)
-    skill_score = (skill_match_count / total_required * 100) if total_required > 0 else 0
+        skill_match_count = sum(1 for skill in candidate.skills if skill in job.required_skills)
+        total_required = len(job.required_skills)
+        skill_score = (skill_match_count / total_required * 100) if total_required > 0 else 0
 
-    if candidate.experience_years >= job.min_experience_years:
-        experience_score = 100
-    else:
-        experience_score = (candidate.experience_years / job.min_experience_years * 100) if job.min_experience_years > 0 else 0
+        if candidate.experience_years >= job.min_experience_years:
+            experience_score = 100
+        else:
+            experience_score = (candidate.experience_years / job.min_experience_years * 100) if job.min_experience_years > 0 else 0
 
-    final_score = (skill_score * 0.7) + (experience_score * 0.3)
-    final_score = round(final_score, 2)
+        final_score = (skill_score * 0.7) + (experience_score * 0.3)
+        final_score = round(final_score, 2)
 
-    details = {
-        "skill_match_count": skill_match_count,
-        "total_required": total_required,
-        "skill_score": skill_score,
-        "experience_score": experience_score,
-        "matched_skills": [s for s in candidate.skills if s in job.required_skills]
-    }
+        details = {
+            "skill_match_count": skill_match_count,
+            "total_required": total_required,
+            "skill_score": skill_score,
+            "experience_score": experience_score,
+            "matched_skills": [s for s in candidate.skills if s in job.required_skills]
+        }
 
-    audit_entry = AuditLog(
-        action="SCORING_COMPLETED",
-        candidate_id=candidate.id,
-        job_id=job.id,
-        score=final_score,
-        details=details
-    )
-    db.add(audit_entry)
-    db.commit()
-    db.refresh(audit_entry)
+        audit_entry = AuditLog(
+            action="SCORING_COMPLETED",
+            candidate_id=candidate.id,
+            job_id=job.id,
+            score=final_score,
+            details=details
+        )
+        db.add(audit_entry)
+        await db.commit()
+        await db.refresh(audit_entry)
 
-    return ScoringResponse(
-        candidate_id=candidate.id,
-        job_id=job.id,
-        score=final_score,
-        details=details
-    )
+        return ScoringResponse(
+            candidate_id=candidate.id,
+            job_id=job.id,
+            score=final_score,
+            details=details
+        )
+    except Exception as e:
+        # Structured error handling for n8n orchestrator
+        return {"error": str(e), "status": 500, "message": "Failed to calculate score or save audit log."}
 
 # --- Registration Refactored for PostgreSQL ---
 from pydantic import BaseModel
@@ -135,7 +140,7 @@ class UsuarioRespuesta(BaseModel):
     created_at: str
 
 @router.post("/api/registro", response_model=UsuarioRespuesta, status_code=201)
-def registrar_usuario(datos: UsuarioRegistro, db: Session = Depends(get_db)):
+async def registrar_usuario(datos: UsuarioRegistro, db: AsyncSession = Depends(get_db)):
     if len(datos.nombre_completo.strip()) < 3:
         raise HTTPException(status_code=422, detail="El nombre debe tener al menos 3 caracteres.")
     if len(datos.contrasena) < 8:
@@ -152,8 +157,8 @@ def registrar_usuario(datos: UsuarioRegistro, db: Session = Depends(get_db)):
     
     try:
         db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
+        await db.commit()
+        await db.refresh(new_user)
         return UsuarioRespuesta(
             id=new_user.id,
             nombre_completo=new_user.username,
@@ -161,12 +166,13 @@ def registrar_usuario(datos: UsuarioRegistro, db: Session = Depends(get_db)):
             created_at=str(new_user.created_at)
         )
     except IntegrityError:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(status_code=409, detail="Ya existe una cuenta con ese correo electrónico o nombre único.")
 
 @router.get("/api/usuarios", response_model=list[UsuarioRespuesta])
-def listar_usuarios(db: Session = Depends(get_db)):
-    usuarios = db.query(User).order_by(User.created_at.desc()).all()
+async def listar_usuarios(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).order_by(User.created_at.desc()))
+    usuarios = result.scalars().all()
     return [
         UsuarioRespuesta(
             id=u.id, 

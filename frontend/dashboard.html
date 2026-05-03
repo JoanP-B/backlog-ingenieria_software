@@ -1,58 +1,301 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Matcher - Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Job Matcher AI - Dashboard de Resultados</title>
+    <meta name="description" content="Tus matches de vacantes calculados por IA — Job Matcher AI.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="dashboard.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            dark: '#0f172a',
+                            darker: '#080f1e',
+                            footer: '#1D2A43',
+                            panel: '#1e293b',
+                            border: '#334155',
+                            primary: '#10b981',
+                            hover: '#059669'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body>
-    <div class="app-container">
-        <aside class="sidebar">
-            <div class="profile-section">
-                <div class="avatar">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-                <h2>Mi Perfil</h2>
-            </div>
-            
-            <form id="profile-form" class="config-form">
-                <div class="form-group">
-                    <label><i class="fa-solid fa-location-dot"></i> Ubicación</label>
-                    <input type="text" id="user-location" value="Medellín, Colombia">
-                </div>
-                <div class="form-group">
-                    <label><i class="fa-solid fa-money-bill"></i> Salario Esperado (COP)</label>
-                    <input type="number" id="user-salary" value="3000000">
-                </div>
-                <div class="form-group">
-                    <label><i class="fa-solid fa-code"></i> Mis Skills</label>
-                    <textarea id="user-skills" rows="3">Python, SQL, Linux, Soporte, Redes</textarea>
-                </div>
-                <button type="button" class="btn-primary w-100" onclick="refreshRanking()">
-                    Actualizar Perfil
-                </button>
-            </form>
-        </aside>
 
-        <main class="main-content">
-            <header class="top-bar">
-                <div>
-                    <h1>Vacantes recomendadas para ti</h1>
-                    <p class="subtitle">Basado en tus preferencias y habilidades</p>
-                </div>
-                <button class="btn-outline" onclick="refreshRanking()">
-                    <i class="fa-solid fa-rotate-right"></i> Refresh
-                </button>
-            </header>
+<!-- Body: column flex, page scroll is natural — right panel is sticky -->
 
-            <div class="ranking-grid" id="ranking-grid">
-            </div>
-        </main>
+<body class="bg-brand-dark text-slate-200 font-sans flex flex-col min-h-screen">
+
+    <!-- ========== TOASTS (fixed, full-width overlay) ========== -->
+    <div id="success-toast" class="hidden opacity-0 -translate-y-2 fixed top-5 left-1/2 -translate-x-1/2 z-50
+                flex items-center gap-3 bg-slate-800 border border-brand-primary/40
+                shadow-[0_0_30px_rgba(16,185,129,0.2)] rounded-2xl px-6 py-4 transition-all duration-500">
+        <div
+            class="w-8 h-8 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary shrink-0">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <div>
+            <p class="text-white font-semibold text-sm">¡Análisis completado!</p>
+            <p class="text-slate-400 text-xs">Aquí están tus mejores opciones de vacantes</p>
+        </div>
     </div>
 
-    <script src="dashboard.js"></script>
+    <div id="postulation-toast" class="hidden opacity-0 -translate-y-2 fixed top-5 left-1/2 -translate-x-1/2 z-50
+                flex items-center gap-3 bg-slate-800 border border-blue-500/40
+                shadow-[0_0_30px_rgba(59,130,246,0.15)] rounded-2xl px-6 py-4 transition-all duration-500">
+        <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+            <i class="fa-solid fa-paper-plane"></i>
+        </div>
+        <div>
+            <p class="text-white font-semibold text-sm">¡Postulación enviada!</p>
+            <p id="postulation-toast-detail" class="text-slate-400 text-xs">Tu perfil fue enviado al equipo de
+                reclutamiento</p>
+        </div>
+    </div>
+
+    <!-- ========== TOP SECTION: Two panels side by side ========== -->
+    <!-- Left panel flows with the page; right panel is sticky -->
+    <div class="flex flex-1">
+
+        <!-- ===== LEFT PANEL — 60% — flows with page scroll ===== -->
+        <aside class="w-3/5 bg-brand-panel border-r border-brand-border flex flex-col shadow-2xl shrink-0">
+
+            <!-- Sidebar header -->
+            <div class="px-6 py-5 border-b border-brand-border bg-slate-800/70 shrink-0">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-brand-primary flex items-center justify-center shadow-sm">
+                            <i class="fa-solid fa-bolt text-white text-xs"></i>
+                        </div>
+                        <span class="text-white font-bold text-base">JobMatcher <span
+                                class="text-brand-primary">AI</span></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="w-7 h-7 rounded-full bg-brand-primary/20 border border-brand-primary/30 flex items-center justify-center text-brand-primary">
+                                <i class="fa-solid fa-user text-[10px]"></i>
+                            </div>
+                            <div class="hidden md:block">
+                                <p id="current-user-display" class="text-white text-xs font-semibold leading-none">
+                                    Usuario</p>
+                                <p class="text-slate-500 text-[10px] mt-0.5">Candidato activo</p>
+                            </div>
+                        </div>
+                        <button onclick="logout()"
+                            class="text-slate-500 hover:text-red-400 transition-colors text-xs flex items-center gap-1 border border-brand-border hover:border-red-400/30 rounded-lg px-2 py-1.5">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span>Salir</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h1 class="text-xl font-bold text-white mb-0.5">Mis Resultados</h1>
+                    <p class="text-xs text-slate-400">Score calculado por IA desde tu hoja de vida</p>
+                </div>
+            </div>
+
+            <!-- Scrollable vacancy list -->
+            <div class="flex-1 overflow-y-auto">
+                <div id="vacancies-list" class="p-5 space-y-7">
+                    <!-- Dynamically populated by app.js -->
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- ===== RIGHT PANEL — 40% — sticky: stays at top while page scrolls ===== -->
+        <main class="w-2/5 sticky top-0 h-screen flex flex-col bg-brand-dark relative overflow-hidden">
+
+            <!-- Spinner overlay -->
+            <div id="loading-spinner" class="absolute inset-0 bg-brand-dark/85 backdrop-blur-sm z-40
+                        flex flex-col items-center justify-center hidden">
+                <svg class="animate-spin h-10 w-10 text-brand-primary mb-4" xmlns="http://www.w3.org/2000/svg"
+                    fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                </svg>
+                <p class="text-white font-medium animate-pulse text-sm">Enviando postulación...</p>
+            </div>
+
+            <!-- Job detail (independent scroll, full height minus nothing — uses flex-1) -->
+            <div id="job-details-container" class="flex-1 overflow-y-auto p-5 lg:p-7 hidden">
+                <!-- Populated by JS when a job is selected -->
+            </div>
+
+            <!-- Empty state -->
+            <div id="empty-state" class="flex-1 flex flex-col items-center justify-center text-slate-500 p-8">
+                <div
+                    class="w-20 h-20 mb-6 rounded-full bg-slate-800/80 border border-brand-border flex items-center justify-center shadow-inner">
+                    <i class="fa-solid fa-briefcase text-3xl text-slate-600"></i>
+                </div>
+                <h2 class="text-xl font-semibold text-slate-300 mb-2">Selecciona una vacante</h2>
+                <p class="text-slate-500 text-sm text-center max-w-xs leading-relaxed">
+                    Elige cualquier vacante del panel izquierdo para ver los detalles y postularte.
+                </p>
+            </div>
+
+        </main>
+
+    </div><!-- end top section -->
+
+
+    <!-- ========== FOOTER GLOBAL — Full width, dark theme ========== -->
+    <footer class="w-full shrink-0 border-t border-brand-border/60" style="background-color: #1D2A43;">
+
+        <div class="max-w-screen-2xl mx-auto px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-10">
+
+            <!-- Col 1: Logo + Redes + Apps -->
+            <div class="flex flex-col gap-6">
+                <!-- Logo -->
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-brand-primary flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-bolt text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <span class="font-black text-xl text-white leading-none">JobMatcher</span>
+                        <span class="font-black text-xl text-brand-primary leading-none"> AI</span>
+                    </div>
+                </div>
+                <!-- Social -->
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">Síguenos:</p>
+                    <div class="flex items-center gap-2">
+                        <a href="#" aria-label="Instagram"
+                            class="w-9 h-9 rounded-full border border-brand-border flex items-center justify-center text-slate-400 hover:border-brand-primary hover:text-brand-primary transition-colors"><i
+                                class="fa-brands fa-instagram text-sm"></i></a>
+                        <a href="#" aria-label="Facebook"
+                            class="w-9 h-9 rounded-full border border-brand-border flex items-center justify-center text-slate-400 hover:border-brand-primary hover:text-brand-primary transition-colors"><i
+                                class="fa-brands fa-facebook-f text-sm"></i></a>
+                        <a href="#" aria-label="LinkedIn"
+                            class="w-9 h-9 rounded-full border border-brand-border flex items-center justify-center text-slate-400 hover:border-brand-primary hover:text-brand-primary transition-colors"><i
+                                class="fa-brands fa-linkedin-in text-sm"></i></a>
+                        <a href="#" aria-label="YouTube"
+                            class="w-9 h-9 rounded-full border border-brand-border flex items-center justify-center text-slate-400 hover:border-brand-primary hover:text-brand-primary transition-colors"><i
+                                class="fa-brands fa-youtube text-sm"></i></a>
+                        <a href="#" aria-label="TikTok"
+                            class="w-9 h-9 rounded-full border border-brand-border flex items-center justify-center text-slate-400 hover:border-brand-primary hover:text-brand-primary transition-colors"><i
+                                class="fa-brands fa-tiktok text-sm"></i></a>
+                    </div>
+                </div>
+                <!-- App buttons -->
+                <div class="flex flex-col gap-2">
+                    <a href="#"
+                        class="inline-flex items-center gap-2.5 px-3 py-2 rounded-lg border border-brand-border hover:border-brand-primary transition-colors w-fit">
+                        <i class="fa-brands fa-google-play text-brand-primary text-lg"></i>
+                        <div class="leading-tight">
+                            <p class="text-[9px] uppercase tracking-wider text-slate-500">Disponible en</p>
+                            <p class="text-sm font-bold text-white">Google Play</p>
+                        </div>
+                    </a>
+                    <a href="#"
+                        class="inline-flex items-center gap-2.5 px-3 py-2 rounded-lg border border-brand-border hover:border-brand-primary transition-colors w-fit">
+                        <i class="fa-brands fa-apple text-lg text-slate-300"></i>
+                        <div class="leading-tight">
+                            <p class="text-[9px] uppercase tracking-wider text-slate-500">Descárgala en</p>
+                            <p class="text-sm font-bold text-white">App Store</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Col 2: Personas -->
+            <div>
+                <h4 class="font-bold text-sm text-white mb-5 uppercase tracking-wider">Personas</h4>
+                <ul class="space-y-3">
+                    <li><a href="vistaPrincipal.html"
+                            class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Ver todos los
+                            empleos</a></li>
+                    <li><a href="index.html"
+                            class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Ingresa a tu
+                            cuenta</a></li>
+                    <li><a href="registro.html"
+                            class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Crear cuenta</a>
+                    </li>
+                    <li><a href="#" class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Empleos
+                            por ciudad</a></li>
+                    <li><a href="#" class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Empleos
+                            por sector</a></li>
+                    <li><a href="#" class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Ayuda y
+                            soporte técnico</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 3: Corporativos + Negocios + Otras -->
+            <div class="flex flex-col gap-7">
+                <div>
+                    <h4 class="font-bold text-sm text-white mb-4 uppercase tracking-wider">JobMatcher Corporativos</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#"
+                                class="text-sm text-slate-400 hover:text-brand-primary transition-colors">JobMatcher
+                                Global</a></li>
+                        <li><a href="#"
+                                class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Selección
+                                digital</a></li>
+                        <li><a href="#"
+                                class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Evaluación
+                                integral del talento</a></li>
+                        <li><a href="#" class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Recibe
+                                una asesoría</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm text-white mb-4 uppercase tracking-wider">Otras soluciones</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Planes
+                                para PYMES</a></li>
+                        <li><a href="#" class="text-sm text-slate-400 hover:text-brand-primary transition-colors">API de
+                                Matching IA</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Col 4: Legal -->
+            <div>
+                <h4 class="font-bold text-sm text-white mb-5 uppercase tracking-wider">Legal</h4>
+                <ul class="space-y-3">
+                    <li><a href="#" class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Política
+                            de Tratamiento de Datos Personales</a></li>
+                    <li><a href="#"
+                            class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Autorización de
+                            tratamiento de datos</a></li>
+                    <li><a href="#" class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Términos y
+                            condiciones</a></li>
+                    <li><a href="#" class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Reglamento
+                            de prestación de servicios</a></li>
+                    <li><a href="#" class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Formulario
+                            Línea Ética</a></li>
+                    <li><a href="#"
+                            class="text-sm text-slate-400 hover:text-brand-primary transition-colors">Sostenibilidad</a>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="border-t border-white/5 py-4">
+            <div class="max-w-screen-2xl mx-auto px-8 flex flex-col md:flex-row items-center justify-between gap-2">
+                <p class="text-xs text-slate-500">JobMatcher AI S.A.S, todos los derechos reservados © 2025</p>
+                <p class="text-[10px] text-slate-600">Desarrollado con FastAPI · n8n · PostgreSQL · Tailwind CSS</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
 </body>
+
 </html>
