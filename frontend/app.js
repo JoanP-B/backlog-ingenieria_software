@@ -418,8 +418,8 @@ if (vacanciesList) {
     }
     function scoreBgBorder(score) {
         if (score >= 75) return "bg-brand-primary/10 border-brand-primary/30 text-brand-primary";
-        if (score >= 50) return "bg-yellow-500/10 border-yellow-500/30 text-yellow-400";
-        return "bg-slate-700/50 border-slate-600 text-slate-400";
+        if (score >= 50) return "bg-yellow-50/50 border-yellow-300 text-yellow-600";
+        return "bg-gray-50 border-gray-200 text-slate-500";
     }
 
     // --- Render a single vacancy card (rank = 1-based global position across all sections) ---
@@ -440,15 +440,15 @@ if (vacanciesList) {
             onclick="selectJob('${job.id}')"
             class="card-hover cursor-pointer p-4 rounded-xl border transition-all duration-200
                    ${isSelected
-                ? "bg-slate-800 ring-2 ring-brand-primary border-transparent shadow-[0_0_20px_rgba(16,185,129,0.12)]"
-                : "bg-slate-800/50 border-brand-border hover:bg-slate-800 hover:border-slate-500"}"
+                ? "bg-white ring-2 ring-brand-primary border-transparent shadow-[0_0_20px_rgba(16,185,129,0.12)]"
+                : "bg-white border-gray-200 hover:bg-slate-50 hover:border-gray-300 shadow-sm"}"
         >
             <div class="flex justify-between items-start gap-2 mb-2">
                 <div class="min-w-0 flex items-start gap-2">
                     ${podiumIcon ? `<span class="text-base shrink-0 mt-0.5">${podiumIcon}</span>` : ""}
                     <div class="min-w-0">
-                        <p class="text-white font-semibold text-sm leading-snug truncate">${job.title}</p>
-                        <p class="text-slate-400 text-[11px] mt-0.5 flex items-center gap-1">
+                        <p class="text-slate-900 font-bold text-sm leading-snug truncate">${job.title}</p>
+                        <p class="text-slate-500 text-[11px] mt-0.5 flex items-center gap-1">
                             <i class="fa-solid fa-building text-[9px]"></i>${job.company}
                             ${isApplied ? `<span class="ml-1 inline-flex items-center gap-1 text-brand-primary text-[10px] font-medium"><i class="fa-solid fa-check-circle"></i> Postulado</span>` : ""}
                         </p>
@@ -461,8 +461,8 @@ if (vacanciesList) {
             </div>
 
             <!-- Progress bar -->
-            <div class="w-full bg-slate-700 rounded-full h-1 mb-3">
-                <div class="h-1 rounded-full transition-all duration-700 ${job.score >= 75 ? "bg-brand-primary" : job.score >= 50 ? "bg-yellow-400" : "bg-slate-500"}"
+            <div class="w-full bg-gray-200 rounded-full h-1 mb-3">
+                <div class="h-1 rounded-full transition-all duration-700 ${job.score >= 75 ? "bg-brand-primary" : job.score >= 50 ? "bg-yellow-500" : "bg-slate-400"}"
                      style="width: ${job.score}%"></div>
             </div>
 
@@ -471,10 +471,10 @@ if (vacanciesList) {
                 ${job.required_skills.slice(0, 3).map(s => {
                     const hit = matched.includes(s);
                     return `<span class="text-[10px] px-1.5 py-0.5 rounded border
-                        ${hit ? "bg-brand-primary/10 border-brand-primary/30 text-brand-primary" : "bg-slate-900/80 border-slate-700 text-slate-400"}">${s}</span>`;
+                        ${hit ? "bg-brand-primary/10 border-brand-primary/30 text-brand-primary" : "bg-gray-50 border-gray-200 text-slate-600"}">${s}</span>`;
                 }).join("")}
                 ${job.required_skills.length > 3
-                ? `<span class="text-[10px] px-1.5 py-0.5 rounded border bg-slate-900 border-slate-700 text-slate-500">+${job.required_skills.length - 3}</span>`
+                ? `<span class="text-[10px] px-1.5 py-0.5 rounded border bg-gray-50 border-gray-200 text-slate-500">+${job.required_skills.length - 3}</span>`
                 : ""}
             </div>
         </div>`;
@@ -504,8 +504,8 @@ if (vacanciesList) {
             <div class="${topJobs.length > 0 ? "pt-2" : ""}">
                 <div class="flex items-center gap-2 mb-3 px-1">
                     <i class="fa-solid fa-star-half-stroke text-slate-400 text-xs"></i>
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Otras buenas opciones</span>
-                    <span class="ml-auto text-[10px] bg-slate-700 text-slate-400 border border-slate-600 px-2 py-0.5 rounded-full font-medium">${otherJobs.length} vacante${otherJobs.length > 1 ? "s" : ""}</span>
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Otras buenas opciones</span>
+                    <span class="ml-auto text-[10px] bg-slate-100 text-slate-500 border border-gray-200 px-2 py-0.5 rounded-full font-medium">${otherJobs.length} vacante${otherJobs.length > 1 ? "s" : ""}</span>
                 </div>
                 <div class="space-y-2">
                     ${otherJobs.map(job => renderCard(job, globalRank++)).join("")}
@@ -535,24 +535,24 @@ if (vacanciesList) {
         <div class="w-full max-w-4xl mx-auto">
 
             <!-- Header -->
-            <div class="bg-slate-800/80 backdrop-blur border border-brand-border rounded-2xl overflow-hidden mb-5 shadow-xl">
-                <div class="p-7 border-b border-brand-border bg-gradient-to-r from-slate-800 to-brand-panel">
+            <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden mb-5 shadow-sm">
+                <div class="p-7 border-b border-gray-200 bg-slate-50">
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                         <div>
                             <div class="flex flex-wrap items-center gap-2 mb-3">
-                                <span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[11px] px-2 py-1 rounded-md font-bold uppercase tracking-wider">Activa</span>
-                                <span class="text-slate-400 text-xs"><i class="fa-regular fa-clock mr-1"></i>Publicada hoy</span>
-                                <span class="text-slate-400 text-xs"><i class="fa-solid fa-location-dot mr-1"></i>${job.location}</span>
+                                <span class="bg-blue-50 text-blue-600 border border-blue-200 text-[11px] px-2 py-1 rounded-md font-bold uppercase tracking-wider">Activa</span>
+                                <span class="text-slate-500 text-xs"><i class="fa-regular fa-clock mr-1"></i>Publicada hoy</span>
+                                <span class="text-slate-500 text-xs"><i class="fa-solid fa-location-dot mr-1"></i>${job.location}</span>
                             </div>
-                            <h2 class="text-2xl lg:text-3xl font-black text-white mb-1 leading-tight">${job.title}</h2>
-                            <p class="text-lg text-slate-400 flex items-center gap-2">
-                                <i class="fa-solid fa-building text-slate-500"></i>${job.company}
+                            <h2 class="text-2xl lg:text-3xl font-black text-slate-900 mb-1 leading-tight">${job.title}</h2>
+                            <p class="text-lg text-slate-600 flex items-center gap-2">
+                                <i class="fa-solid fa-building text-slate-400"></i>${job.company}
                             </p>
                         </div>
                         <!-- Score ring -->
                         <div class="shrink-0 flex flex-col items-center">
-                            <div class="w-20 h-20 rounded-full border-4 ${job.score >= 75 ? "border-brand-primary" : job.score >= 50 ? "border-yellow-400" : "border-slate-600"}
-                                        flex items-center justify-center shadow-lg">
+                            <div class="w-20 h-20 bg-white rounded-full border-4 ${job.score >= 75 ? "border-brand-primary" : job.score >= 50 ? "border-yellow-500" : "border-gray-200"}
+                                        flex items-center justify-center shadow-sm">
                                 <div class="text-center">
                                     <span class="block text-xl font-black ${scoreColor(job.score)}">${job.score}%</span>
                                 </div>
@@ -563,8 +563,8 @@ if (vacanciesList) {
                 </div>
 
                 <!-- Salary -->
-                <div class="px-7 py-4 flex items-center justify-between bg-slate-900/30">
-                    <span class="text-slate-400 text-sm"><i class="fa-solid fa-money-bill-wave mr-2 text-brand-primary"></i>Salario mensual</span>
+                <div class="px-7 py-4 flex items-center justify-between bg-white">
+                    <span class="text-slate-600 text-sm"><i class="fa-solid fa-money-bill-wave mr-2 text-brand-primary"></i>Salario mensual</span>
                     <span class="text-brand-primary font-bold text-lg">${job.salary}</span>
                 </div>
             </div>
@@ -572,7 +572,7 @@ if (vacanciesList) {
             <!-- Skills breakdown -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                 <!-- Matched skills -->
-                <div class="bg-slate-800/80 border border-brand-border rounded-2xl p-5">
+                <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
                     <h4 class="text-xs uppercase tracking-widest font-bold text-brand-primary mb-4 flex items-center gap-2">
                         <i class="fa-solid fa-check-circle"></i>Skills que dominas (${matched.length}/${job.required_skills.length})
                     </h4>
@@ -583,13 +583,13 @@ if (vacanciesList) {
                     </div>
                 </div>
                 <!-- Missing skills -->
-                <div class="bg-slate-800/80 border border-brand-border rounded-2xl p-5">
-                    <h4 class="text-xs uppercase tracking-widest font-bold text-slate-400 mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-triangle-exclamation text-yellow-400"></i>Skills a desarrollar (${missing.length})
+                <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                    <h4 class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation text-yellow-500"></i>Skills a desarrollar (${missing.length})
                     </h4>
                     <div class="flex flex-wrap gap-2">
                         ${missing.length > 0
-                ? missing.map(s => `<span class="bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1.5 rounded-lg text-sm">${s}</span>`).join("")
+                ? missing.map(s => `<span class="bg-gray-50 text-slate-600 border border-gray-200 px-3 py-1.5 rounded-lg text-sm">${s}</span>`).join("")
                 : `<p class="text-brand-primary text-sm font-medium">¡Tienes todas las skills requeridas!</p>`}
                     </div>
                 </div>
@@ -599,25 +599,25 @@ if (vacanciesList) {
             <div class="space-y-4 mb-5">
 
                 <!-- Descripción corta -->
-                <div class="bg-slate-800/80 border border-brand-border rounded-2xl p-5">
-                    <h3 class="text-xs uppercase tracking-widest font-bold text-slate-400 mb-3 flex items-center gap-2">
+                <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                    <h3 class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-3 flex items-center gap-2">
                         <i class="fa-solid fa-circle-info text-brand-primary"></i>Sobre el rol
                     </h3>
-                    <p class="text-slate-300 leading-relaxed text-sm">${job.description}</p>
-                    <div class="mt-3 pt-3 border-t border-brand-border/50 flex items-center gap-4 text-xs text-slate-500">
-                        <span><i class="fa-solid fa-calendar-check mr-1.5 text-slate-600"></i>${job.min_experience_years} años de experiencia mínima</span>
+                    <p class="text-slate-600 leading-relaxed text-sm">${job.description}</p>
+                    <div class="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4 text-xs text-slate-500">
+                        <span><i class="fa-solid fa-calendar-check mr-1.5 text-slate-400"></i>${job.min_experience_years} años de experiencia mínima</span>
                     </div>
                 </div>
 
                 <!-- Funciones principales -->
                 ${job.functions && job.functions.length > 0 ? `
-                <div class="bg-slate-800/80 border border-brand-border rounded-2xl p-5">
+                <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
                     <h3 class="text-xs uppercase tracking-widest font-bold text-brand-primary mb-4 flex items-center gap-2">
                         <i class="fa-solid fa-list-check"></i>Funciones principales
                     </h3>
                     <ul class="space-y-2.5">
                         ${job.functions.map(f => `
-                        <li class="flex items-start gap-2.5 text-slate-300 text-sm leading-relaxed">
+                        <li class="flex items-start gap-2.5 text-slate-600 text-sm leading-relaxed">
                             <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-primary shrink-0"></span>
                             ${f}
                         </li>`).join('')}
@@ -626,14 +626,14 @@ if (vacanciesList) {
 
                 <!-- Ofrecemos -->
                 ${job.offerings && job.offerings.length > 0 ? `
-                <div class="bg-slate-800/80 border border-brand-border rounded-2xl p-5">
-                    <h3 class="text-xs uppercase tracking-widest font-bold text-yellow-400 mb-4 flex items-center gap-2">
+                <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                    <h3 class="text-xs uppercase tracking-widest font-bold text-yellow-600 mb-4 flex items-center gap-2">
                         <i class="fa-solid fa-gift"></i>Ofrecemos
                     </h3>
                     <ul class="space-y-2.5">
                         ${job.offerings.map(o => `
-                        <li class="flex items-start gap-2.5 text-slate-300 text-sm leading-relaxed">
-                            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0"></span>
+                        <li class="flex items-start gap-2.5 text-slate-600 text-sm leading-relaxed">
+                            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-yellow-500 shrink-0"></span>
                             ${o}
                         </li>`).join('')}
                     </ul>
@@ -642,7 +642,7 @@ if (vacanciesList) {
                 <!-- Párrafo de cierre -->
                 ${job.closing ? `
                 <div class="bg-brand-primary/5 border border-brand-primary/20 rounded-2xl px-5 py-4">
-                    <p class="text-slate-300 text-sm leading-relaxed italic">
+                    <p class="text-slate-700 text-sm leading-relaxed italic">
                         <i class="fa-solid fa-quote-left text-brand-primary mr-2 opacity-60"></i>${job.closing}
                     </p>
                 </div>` : ''}
@@ -650,11 +650,11 @@ if (vacanciesList) {
                 <!-- Keywords / Badges -->
                 ${job.keywords && job.keywords.length > 0 ? `
                 <div>
-                    <p class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-2.5">Palabras clave</p>
+                    <p class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-2.5 mt-2">Palabras clave</p>
                     <div class="flex flex-wrap gap-2">
                         ${job.keywords.map(k => `
                         <span class="text-xs font-medium px-3 py-1 rounded-full border
-                               bg-slate-700/60 border-brand-border text-slate-300
+                               bg-gray-50 border-gray-200 text-slate-600
                                hover:border-brand-primary hover:text-brand-primary transition-colors cursor-default">
                             #${k}
                         </span>`).join('')}
@@ -663,8 +663,8 @@ if (vacanciesList) {
 
             </div>
             <!-- CTA -->
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-800/50 border border-brand-border rounded-2xl px-6 py-5">
-                <div class="text-sm text-slate-400">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50 border border-gray-200 rounded-2xl px-6 py-5 shadow-sm">
+                <div class="text-sm text-slate-600">
                     <i class="fa-solid fa-shield-halved mr-2 text-brand-primary"></i>
                     Tu postulación es confidencial y segura.
                 </div>
