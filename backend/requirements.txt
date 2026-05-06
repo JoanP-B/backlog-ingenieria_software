@@ -10,3 +10,4 @@ passlib==1.7.4
 slowapi
 bcrypt==4.0.1
 asyncpg
+openai

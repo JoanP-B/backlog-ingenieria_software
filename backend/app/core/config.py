@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str = os.getenv("JWT_SECRET", "supersecretkey_for_jwt")
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     
     class Config:
         env_file = ".env"
