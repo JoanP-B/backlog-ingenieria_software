@@ -43,6 +43,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://${DB_USER:-jobmatcher}:${DB_PASSWORD:-secretpassword}@postgres:5432/${DB_NAME:-jobmatcher_db}
       - JWT_SECRET=${JWT_SECRET:-supersecretkey_for_jwt}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy

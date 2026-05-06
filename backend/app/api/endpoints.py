@@ -40,7 +40,6 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Bypass temporal para MVP: acepta la clave Admin123* para que el usuario pueda entrar sin el hash correcto
     if password != "Admin123*" and not security.verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -53,6 +52,7 @@ async def login_for_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
@@ -72,6 +72,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
             headers={"WWW-Authenticate": "Bearer"},
         )
     return username
+
 
 # --- Scoring ---
 @router.post("/score", response_model=ScoringResponse)
@@ -118,10 +119,10 @@ async def calculate_score(request: ScoringRequest, db: AsyncSession = Depends(ge
             details=details
         )
     except Exception as e:
-        # Structured error handling for n8n orchestrator
         return {"error": str(e), "status": 500, "message": "Failed to calculate score or save audit log."}
 
-# --- Registration Refactored for PostgreSQL ---
+
+# --- Registration ---
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from passlib.context import CryptContext
@@ -130,7 +131,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class UsuarioRegistro(BaseModel):
     nombre_completo: str
-    correo: str  # Cambiado temporalmente a str normal para evitar que falle por la libreria email-validator
+    correo: str
     contrasena: str
 
 class UsuarioRespuesta(BaseModel):
@@ -154,7 +155,7 @@ async def registrar_usuario(datos: UsuarioRegistro, db: AsyncSession = Depends(g
         hashed_password=contrasena_hash,
         is_active=True
     )
-    
+
     try:
         db.add(new_user)
         await db.commit()
@@ -175,10 +176,97 @@ async def listar_usuarios(db: AsyncSession = Depends(get_db)):
     usuarios = result.scalars().all()
     return [
         UsuarioRespuesta(
-            id=u.id, 
-            nombre_completo=u.username, 
-            correo=u.email, 
+            id=u.id,
+            nombre_completo=u.username,
+            correo=u.email,
             created_at=str(u.created_at)
-        ) 
+        )
         for u in usuarios
     ]
+
+
+# --- Extracción de CV con OpenAI para matching de vacantes ---
+import json as json_lib
+import base64
+from openai import OpenAI
+from fastapi import UploadFile, File
+
+@router.post("/api/extraer-cv")
+async def extraer_cv(file: UploadFile = File(...)):
+    if not settings.OPENAI_API_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="OPENAI_API_KEY no configurada en el servidor."
+        )
+
+    if file.content_type != "application/pdf":
+        raise HTTPException(
+            status_code=400,
+            detail="Solo se aceptan archivos PDF."
+        )
+
+    contenido = await file.read()
+
+    try:
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+        # Subir el PDF a OpenAI Files API
+        archivo_tuple = ("hoja_de_vida.pdf", contenido, "application/pdf")
+        archivo_openai = client.files.create(file=archivo_tuple, purpose="assistants")
+
+        prompt = """Analiza esta hoja de vida y extrae la informacion para hacer matching con ofertas laborales.
+Responde UNICAMENTE con JSON valido, sin backticks ni texto adicional.
+Usa exactamente esta estructura:
+{
+  "nombre": "nombre completo del candidato",
+  "ubicacion": "ciudad y pais donde vive (ej: Bogota, Colombia)",
+  "salario_esperado": 0,
+  "habilidades": ["habilidad1", "habilidad2", "habilidad3"],
+  "experiencia_anos": 0,
+  "educacion": "nivel y carrera mas reciente",
+  "resumen": "resumen del perfil profesional en 2 lineas"
+}
+Notas:
+- habilidades debe incluir tecnologias, lenguajes, herramientas y soft skills relevantes.
+- salario_esperado en pesos colombianos COP. Si no aparece, estima segun el perfil y experiencia.
+- ubicacion solo ciudad y pais.
+- Si algun dato no esta disponible deja el string vacio o el numero en 0."""
+
+        # Usar Responses API con soporte de archivos
+        respuesta = client.responses.create(
+            model="gpt-4o-mini",
+            input=[{
+                "role": "user",
+                "content": [
+                    {"type": "input_file", "file_id": archivo_openai.id},
+                    {"type": "input_text", "text": prompt}
+                ]
+            }]
+        )
+
+        texto = respuesta.output_text.strip()
+
+        # Eliminar el archivo subido de OpenAI
+        client.files.delete(archivo_openai.id)
+
+        # Limpiar backticks si OpenAI los agrega
+        if texto.startswith("```"):
+            texto = texto.split("```")[1]
+            if texto.startswith("json"):
+                texto = texto[4:]
+        texto = texto.strip()
+
+        datos = json_lib.loads(texto)
+        return datos
+
+    except json_lib.JSONDecodeError:
+        raise HTTPException(
+            status_code=422,
+            detail="La IA no pudo estructurar los datos del CV. Intenta con otro archivo."
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al procesar el CV: {str(e)}"
+        )
+    

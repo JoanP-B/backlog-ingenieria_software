@@ -106,6 +106,21 @@
                 </div>
             </div>
 
+            <!-- CV Upload Section -->
+            <div class="px-5 py-4 border-b border-brand-border bg-slate-800/40 shrink-0">
+                <p class="text-xs text-slate-400 mb-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-brand-primary mr-1"></i>
+                    Sube tu CV y hacemos el match automático
+                </p>
+                <label for="cvUpload"
+                    class="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg border border-dashed border-brand-primary/40 bg-brand-primary/5 hover:bg-brand-primary/10 text-brand-primary text-sm font-medium cursor-pointer transition-colors">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span id="cvUpload-label">Subir Hoja de Vida (PDF)</span>
+                </label>
+                <input type="file" id="cvUpload" accept=".pdf" class="hidden">
+                <div id="cv-status" class="mt-2"></div>
+            </div>
+
             <!-- Scrollable vacancy list -->
             <div class="flex-1 overflow-y-auto">
                 <div id="vacancies-list" class="p-5 space-y-7">
