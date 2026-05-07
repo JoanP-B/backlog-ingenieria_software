@@ -24,3 +24,20 @@ class AuditLog(Base):
     job_id = Column(String(255))
     score = Column(DECIMAL(5, 2))
     details = Column(JSONB)
+
+class Job(Base):
+    __tablename__ = "jobs"
+
+    id = Column(String(255), primary_key=True)
+    title = Column(String(255), nullable=False)
+    company = Column(String(255), nullable=False)
+    location = Column(String(255))
+    salary = Column(String(100))
+    min_experience_years = Column(Integer)
+    required_skills = Column(JSONB, nullable=False)
+    description = Column(String)
+    functions = Column(JSONB)
+    offerings = Column(JSONB)
+    closing = Column(String)
+    keywords = Column(JSONB)
+    created_at = Column(DateTime(timezone=True), server_default=text('CURRENT_TIMESTAMP'))

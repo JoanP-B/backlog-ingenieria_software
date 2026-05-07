@@ -7,8 +7,9 @@ from datetime import timedelta
 from app.core import security
 from app.core.config import settings
 from app.infrastructure.database import get_db
-from app.domain.schemas import Token, ScoringRequest, ScoringResponse
-from app.domain.models import AuditLog, User
+from typing import List
+from app.domain.schemas import Token, ScoringRequest, ScoringResponse, JobSchema
+from app.domain.models import AuditLog, User, Job
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -269,4 +270,11 @@ Notas:
             status_code=500,
             detail=f"Error al procesar el CV: {str(e)}"
         )
+
+# --- Job Fetching ---
+@router.get("/jobs", response_model=List[JobSchema])
+async def get_jobs(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Job))
+    jobs = result.scalars().all()
+    return jobs
     

@@ -34,8 +34,18 @@ class CandidateSchema(BaseModel):
 class JobSchema(BaseModel):
     id: str
     title: str
-    required_skills: List[str]
+    company: str
+    location: Optional[str] = None
+    salary: Optional[str] = None
     min_experience_years: int
+    required_skills: List[str]
+    description: Optional[str] = None
+    functions: Optional[List[str]] = None
+    offerings: Optional[List[str]] = None
+    closing: Optional[str] = None
+    keywords: Optional[List[str]] = None
+    
+    model_config = ConfigDict(from_attributes=True)
 
 class ScoringRequest(BaseModel):
     candidate: CandidateSchema

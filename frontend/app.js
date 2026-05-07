@@ -131,273 +131,30 @@ if (vacanciesList) {
     }
 
     // --- Vacantes ---
-    const rawJobs = [
-        {
-            id: "J001",
-            title: "Desarrollador Backend Python",
-            company: "Bancolombia",
-            location: "Medellín — Híbrido",
-            salary: "COP 7,500,000",
-            min_experience_years: 3,
-            required_skills: ["Python", "FastAPI", "PostgreSQL", "Docker", "Git"],
-            description: "Únete al equipo de tecnología del banco más grande de Colombia para construir microservicios financieros de alto rendimiento que procesan millones de transacciones diarias.",
-            functions: [
-                "Diseñar e implementar microservicios con FastAPI para el core bancario.",
-                "Optimizar consultas sobre bases de datos PostgreSQL con millones de registros.",
-                "Integrar servicios de pagos, notificaciones y seguridad bancaria.",
-                "Participar en revisiones de código y cumplimiento de estándares PCI-DSS.",
-                "Colaborar con equipos de ciberseguridad para garantizar la protección de datos."
-            ],
-            offerings: [
-                "Salario competitivo + bonificaciones por desempeño.",
-                "Modalidad híbrida: 3 días en casa, 2 en oficina.",
-                "Plan de salud y vida para ti y tu familia.",
-                "Acceso a la plataforma de formación Bancolombia Academy.",
-                "Préstamos especiales para empleados con tasas preferenciales."
-            ],
-            closing: "En Bancolombia creemos en el talento colombiano. Si quieres construir el futuro financiero del país con tecnología de punta, este es tu lugar.",
-            keywords: ["Fintech", "Backend", "Python", "Banca", "Híbrido"]
-        },
-        {
-            id: "J002",
-            title: "Ingeniero de Datos Senior",
-            company: "Rappi",
-            location: "Bogotá — Remoto",
-            salary: "COP 9,000,000",
-            min_experience_years: 4,
-            required_skills: ["Python", "SQL", "ETL", "Cloud", "Machine Learning"],
-            description: "Sé parte del equipo de datos que mueve a millones de usuarios en toda Latinoamérica. Construirás pipelines de datos que alimentan las decisiones de negocio en tiempo real.",
-            functions: [
-                "Diseñar y mantener pipelines de datos con Apache Spark y Airflow.",
-                "Construir modelos de Machine Learning para personalización y predicción de demanda.",
-                "Optimizar el procesamiento de más de 50 millones de eventos diarios.",
-                "Colaborar con Product y Engineering para definir métricas clave del negocio.",
-                "Garantizar la calidad y gobernanza de datos en toda la plataforma."
-            ],
-            offerings: [
-                "Salario con ajuste trimestral.",
-                "Stock options en una de las startups más grandes de LATAM.",
-                "Trabajo 100% remoto desde cualquier ciudad de Colombia.",
-                "Budget anual para conferencias y certificaciones cloud.",
-                "Acceso a Rappi Pro y beneficios internos."
-            ],
-            closing: "Rappi está transformando cómo LATAM consume. Si quieres impactar la vida de millones de personas con datos, aplica hoy.",
-            keywords: ["Data Engineering", "LATAM", "Remoto", "Startups", "ML"]
-        },
-        {
-            id: "J003",
-            title: "Full Stack Developer",
-            company: "Globant Colombia",
-            location: "Bogotá — Remoto Global",
-            salary: "COP 8,500,000",
-            min_experience_years: 3,
-            required_skills: ["JavaScript", "React", "Node.js", "SQL", "Git"],
-            description: "Globant, empresa líder en transformación digital con presencia en 30 países, busca desarrolladores Full Stack para trabajar con clientes Fortune 500 de USA y Europa.",
-            functions: [
-                "Desarrollar aplicaciones web escalables con React y Node.js.",
-                "Integrarse a squads ágiles internacionales trabajando con clientes de USA.",
-                "Participar en code reviews y definición de arquitectura de soluciones.",
-                "Implementar mejores prácticas de CI/CD y pruebas automatizadas.",
-                "Comunicarse directamente con stakeholders de negocio en inglés."
-            ],
-            offerings: [
-                "Proyectos con marcas globales: Disney, Electronic Arts, Google.",
-                "Salario en pesos con bonos en dólares.",
-                "Trabajo remoto con posibilidad de rotaciones internacionales.",
-                "Plan de carrera: Junior → Senior → Tech Lead.",
-                "Seguro médico complementario y días adicionales de vacaciones."
-            ],
-            closing: "En Globant trabajarás con los mejores ingenieros de LATAM en proyectos que llegan a cientos de millones de usuarios. ¿Estás listo para el desafío?",
-            keywords: ["Full Stack", "Internacional", "React", "Node.js", "Remoto"]
-        },
-        {
-            id: "J004",
-            title: "DevOps / SRE Engineer",
-            company: "Grupo Éxito Tech",
-            location: "Medellín — Híbrido",
-            salary: "COP 8,000,000",
-            min_experience_years: 3,
-            required_skills: ["Docker", "Kubernetes", "AWS", "Linux", "CI/CD"],
-            description: "El equipo tech del Grupo Éxito gestiona la infraestructura del e-commerce más grande de Colombia. Buscamos un SRE que garantice disponibilidad 24/7 durante picos de hasta 100K usuarios simultáneos.",
-            functions: [
-                "Administrar clústeres Kubernetes en AWS para el portal de e-commerce.",
-                "Implementar pipelines CI/CD con GitHub Actions y ArgoCD.",
-                "Monitorear sistemas con Grafana, Prometheus y CloudWatch.",
-                "Responder a incidentes de producción y crear postmortems.",
-                "Optimizar costos de infraestructura cloud sin sacrificar disponibilidad."
-            ],
-            offerings: [
-                "Bono de disponibilidad para guardia nocturna.",
-                "Descuentos en todas las marcas del Grupo Éxito.",
-                "Modalidad híbrida con oficinas en El Poblado.",
-                "Certificaciones AWS pagadas por la empresa.",
-                "Plan de pensión voluntaria con aporte empresarial."
-            ],
-            closing: "Sé parte del equipo que mantiene vivo el e-commerce de millones de colombianos. En Grupo Éxito Tech, cada línea de código tiene impacto real.",
-            keywords: ["DevOps", "SRE", "AWS", "E-commerce", "Colombia"]
-        },
-        {
-            id: "J005",
-            title: "Desarrollador Mobile Flutter",
-            company: "Nequi",
-            location: "Medellín — Remoto",
-            salary: "COP 7,000,000",
-            min_experience_years: 2,
-            required_skills: ["Flutter", "Dart", "Git", "SQL", "API REST"],
-            description: "Nequi, la app financiera con más de 20 millones de usuarios en Colombia, busca un desarrollador Mobile para seguir revolucionando cómo los colombianos manejan su dinero.",
-            functions: [
-                "Desarrollar nuevas funcionalidades en la app Nequi con Flutter.",
-                "Optimizar el rendimiento y la experiencia de usuario en iOS y Android.",
-                "Integrar APIs bancarias y pasarelas de pago de forma segura.",
-                "Participar en pruebas A/B para mejorar la conversión de usuarios.",
-                "Colaborar con diseñadores UX para implementar el sistema de diseño de Nequi."
-            ],
-            offerings: [
-                "Ser parte de una fintech colombiana con impacto social real.",
-                "Trabajo 100% remoto con reuniones asíncronas.",
-                "Cuenta Nequi Plus sin costo y beneficios financieros exclusivos.",
-                "Bono anual por cumplimiento de metas.",
-                "Ambiente de trabajo joven, diverso e innovador."
-            ],
-            closing: "En Nequi estamos democratizando las finanzas en Colombia. Si quieres construir tecnología con propósito y llegar a 20 millones de personas, únete.",
-            keywords: ["Mobile", "Flutter", "Fintech", "Remoto", "iOS/Android"]
-        },
-        {
-            id: "J006",
-            title: "Analista de Ciberseguridad",
-            company: "EPM",
-            location: "Medellín — Presencial",
-            salary: "COP 6,500,000",
-            min_experience_years: 2,
-            required_skills: ["Linux", "Redes", "Python", "Seguridad", "SQL"],
-            description: "EPM, empresa de servicios públicos más grande de Colombia, busca un analista de ciberseguridad para proteger la infraestructura crítica que da agua, luz y gas a millones de hogares.",
-            functions: [
-                "Monitorear eventos de seguridad en el SIEM corporativo.",
-                "Realizar análisis de vulnerabilidades en sistemas OT e IT.",
-                "Responder a incidentes de seguridad y coordinar la contención.",
-                "Implementar controles de seguridad en redes industriales.",
-                "Elaborar informes de riesgo para la alta dirección."
-            ],
-            offerings: [
-                "Estabilidad laboral en una empresa pública líder.",
-                "Salario + auxilio de alimentación y transporte.",
-                "Fondo de empleados con créditos a bajo interés.",
-                "Plan de formación en ciberseguridad certificada.",
-                "Horario de lunes a viernes sin turnos nocturnos."
-            ],
-            closing: "En EPM protegemos la infraestructura que hace posible la vida cotidiana de los colombianos. Únete si quieres trabajar en ciberseguridad con impacto real.",
-            keywords: ["Ciberseguridad", "Infraestructura", "Linux", "EPM", "Medellín"]
-        },
-        {
-            id: "J007",
-            title: "Desarrollador Frontend React",
-            company: "Addi",
-            location: "Bogotá — Remoto",
-            salary: "COP 6,800,000",
-            min_experience_years: 2,
-            required_skills: ["JavaScript", "React", "Tailwind CSS", "Git", "API REST"],
-            description: "Addi es la plataforma de crédito digital más grande de Colombia con operaciones en Brasil y México. Buscamos un Frontend Developer para construir la experiencia que usan millones de compradores cada día.",
-            functions: [
-                "Construir componentes reutilizables con React y Tailwind CSS.",
-                "Integrar el checkout de crédito en tiendas aliadas de Colombia y LATAM.",
-                "Optimizar la performance y accesibilidad de la aplicación web.",
-                "Colaborar con el equipo de diseño en el sistema de diseño de Addi.",
-                "Implementar pruebas automatizadas con Jest y Testing Library."
-            ],
-            offerings: [
-                "Trabajo 100% remoto con equipo distribuido en LATAM.",
-                "Equity en una startup de alto crecimiento.",
-                "Presupuesto mensual para home office y bienestar.",
-                "Acceso a plataformas de aprendizaje como Platzi y Coursera.",
-                "Días de descanso adicionales por salud mental."
-            ],
-            closing: "Addi está redefiniendo el acceso al crédito en Latinoamérica. Si quieres construir productos que cambian vidas, este es tu equipo.",
-            keywords: ["Frontend", "React", "Fintech", "LATAM", "Remoto"]
-        },
-        {
-            id: "J008",
-            title: "Ingeniero de Machine Learning",
-            company: "Frubana",
-            location: "Bogotá — Híbrido",
-            salary: "COP 8,200,000",
-            min_experience_years: 3,
-            required_skills: ["Python", "Machine Learning", "SQL", "Cloud", "Pandas"],
-            description: "Frubana es el marketplace B2B de alimentos frescos más grande de Colombia y México. Usamos ML para predecir demanda, optimizar rutas y reducir el desperdicio alimentario.",
-            functions: [
-                "Desarrollar modelos de predicción de demanda para más de 5000 productos frescos.",
-                "Optimizar algoritmos de ruteo para flota de entrega con IA.",
-                "Construir pipelines de ML en producción con MLflow y Airflow.",
-                "Analizar datos de más de 50,000 restaurantes y tiendas aliadas.",
-                "Colaborar con equipos de operaciones para implementar soluciones en campo."
-            ],
-            offerings: [
-                "Trabajar en un problema con impacto social: reducir el desperdicio de alimentos.",
-                "Modalidad híbrida con oficina en Bogotá.",
-                "Stock options en startup respaldada por SoftBank.",
-                "Budget para certificaciones de ML y cloud.",
-                "Almuerzo pagado en días de oficina."
-            ],
-            closing: "En Frubana usamos la tecnología para hacer más eficiente la cadena alimentaria de LATAM. Si te apasiona el ML con impacto real, aplica ya.",
-            keywords: ["Machine Learning", "Agritech", "Python", "LATAM", "Startups"]
-        },
-        {
-            id: "J009",
-            title: "Tech Lead Backend",
-            company: "Sura Asset Management",
-            location: "Medellín — Híbrido",
-            salary: "COP 10,500,000",
-            min_experience_years: 5,
-            required_skills: ["Python", "Java", "PostgreSQL", "Docker", "Liderazgo técnico"],
-            description: "Sura, uno de los grupos financieros más grandes de LATAM, busca un Tech Lead para liderar el equipo de plataformas de inversión que gestiona activos de más de 20 millones de personas.",
-            functions: [
-                "Liderar técnicamente un equipo de 6 desarrolladores backend.",
-                "Definir la arquitectura de microservicios para la plataforma de fondos de inversión.",
-                "Garantizar la calidad del código mediante code reviews y estándares técnicos.",
-                "Colaborar con el área de negocio para traducir requerimientos en soluciones técnicas.",
-                "Mentorizar a desarrolladores junior y semi-senior del equipo."
-            ],
-            offerings: [
-                "Salario de mercado para roles de liderazgo + bono anual.",
-                "Fondo de empleados Sura con múltiples beneficios financieros.",
-                "Plan médico premium para ti y tu familia.",
-                "Modalidad híbrida flexible según necesidades del equipo.",
-                "Programa de desarrollo de liderazgo Sura."
-            ],
-            closing: "En Sura liderarás la tecnología que cuida el patrimonio de millones de latinoamericanos. Es una responsabilidad enorme y una oportunidad única de carrera.",
-            keywords: ["Tech Lead", "Finanzas", "Backend", "Liderazgo", "Medellín"]
-        },
-        {
-            id: "J010",
-            title: "QA Automation Engineer",
-            company: "Tigo Colombia",
-            location: "Bogotá — Híbrido",
-            salary: "COP 5,800,000",
-            min_experience_years: 2,
-            required_skills: ["Python", "Selenium", "Git", "SQL", "API REST"],
-            description: "Tigo, uno de los operadores de telecomunicaciones más grandes de Colombia, busca un QA Automation Engineer para garantizar la calidad de los servicios digitales que usan millones de usuarios.",
-            functions: [
-                "Diseñar y mantener frameworks de automatización con Selenium y Python.",
-                "Crear y ejecutar pruebas de regresión para el portal web y app de Tigo.",
-                "Automatizar pruebas de API REST con Postman y PyTest.",
-                "Colaborar con desarrolladores en la integración de pruebas al pipeline CI/CD.",
-                "Generar reportes de calidad y métricas de cobertura para el equipo de producto."
-            ],
-            offerings: [
-                "Plan de datos Tigo ilimitado sin costo.",
-                "Modalidad híbrida con oficina en el norte de Bogotá.",
-                "Bono semestral por cumplimiento de metas de calidad.",
-                "Acceso a cursos de certificación ISTQB pagados.",
-                "Descuentos en servicios Tigo para ti y tu familia."
-            ],
-            closing: "En Tigo garantizamos que millones de colombianos se conecten sin interrupciones. Si te apasiona la calidad del software, aquí tu trabajo tiene impacto directo.",
-            keywords: ["QA", "Automatización", "Telecomunicaciones", "Bogotá", "Testing"]
+    let rawJobs = [];
+    let jobs = [];
+    let topJobs = [];
+    let otherJobs = [];
+
+    async function loadJobs() {
+        try {
+            const response = await fetch("http://localhost:8000/jobs");
+            if (!response.ok) throw new Error("Error al obtener vacantes");
+            rawJobs = await response.json();
+            
+            jobs = rawJobs.map(j => ({ ...j, score: computeScore(j) })).sort((a, b) => b.score - a.score);
+            topJobs = jobs.filter(j => j.score >= 60);
+            otherJobs = jobs.filter(j => j.score >= 30 && j.score < 60);
+            
+            loadJobs();
+        } catch (error) {
+            console.error("Error:", error);
+            const list = document.getElementById("vacancies-list");
+            if (list) list.innerHTML = `<p class='text-red-500'>Error cargando vacantes desde el servidor.</p>`;
         }
-    ];
+    }
 
-    const jobs     = rawJobs.map(j => ({ ...j, score: computeScore(j) })).sort((a, b) => b.score - a.score);
-    const topJobs  = jobs.filter(j => j.score >= 60);
-    const otherJobs= jobs.filter(j => j.score >= 30 && j.score < 60);
-
+            
     let selectedJobId = null;
     let appliedJobIds = new Set();
 
@@ -524,13 +281,13 @@ if (vacanciesList) {
         if (detailsContainer) detailsContainer.classList.add("hidden");
         if (emptyState)       emptyState.classList.remove("hidden");
 
-        renderVacancies();
+        loadJobs();
     };
 
     // --- Detalle de vacante ---
     window.selectJob = function (id) {
         selectedJobId = id;
-        renderVacancies();
+        loadJobs();
 
         const job              = jobs.find(j => j.id === id);
         if (!job) return;
@@ -693,7 +450,7 @@ if (vacanciesList) {
     };
 
     // --- Render inicial ---
-    renderVacancies();
+    loadJobs();
 
 } // ← FIN del bloque if (vacanciesList)
 
