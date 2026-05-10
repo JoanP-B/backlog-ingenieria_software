@@ -10,6 +10,7 @@ from app.infrastructure.database import get_db
 from typing import List
 from app.domain.schemas import Token, ScoringRequest, ScoringResponse, JobSchema
 from app.domain.models import AuditLog, User, Job
+from app.domain.scoring_engine import ScoringEngine
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -82,24 +83,20 @@ async def calculate_score(request: ScoringRequest, db: AsyncSession = Depends(ge
         candidate = request.candidate
         job = request.job
 
-        skill_match_count = sum(1 for skill in candidate.skills if skill in job.required_skills)
-        total_required = len(job.required_skills)
-        skill_score = (skill_match_count / total_required * 100) if total_required > 0 else 0
-
-        if candidate.experience_years >= job.min_experience_years:
-            experience_score = 100
-        else:
-            experience_score = (candidate.experience_years / job.min_experience_years * 100) if job.min_experience_years > 0 else 0
-
-        final_score = (skill_score * 0.7) + (experience_score * 0.3)
-        final_score = round(final_score, 2)
-
+        scoring_result = ScoringEngine.compute_final_match(
+            candidate_skills=candidate.skills,
+            candidate_experience=candidate.experience_years,
+            required_skills=job.required_skills,
+            required_experience=job.min_experience_years
+        )
+        
+        final_score = scoring_result["final_score"]
         details = {
-            "skill_match_count": skill_match_count,
-            "total_required": total_required,
-            "skill_score": skill_score,
-            "experience_score": experience_score,
-            "matched_skills": [s for s in candidate.skills if s in job.required_skills]
+            "skill_match_count": scoring_result["skill_match_count"],
+            "total_required": scoring_result["total_required"],
+            "skill_score": scoring_result["skill_score"],
+            "experience_score": scoring_result["experience_score"],
+            "matched_skills": scoring_result["matched_skills"]
         }
 
         audit_entry = AuditLog(

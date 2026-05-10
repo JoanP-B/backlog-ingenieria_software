@@ -14,9 +14,9 @@ function logout() {
 const loginForm = document.getElementById("login-form");
 if (loginForm) {
     const identifierInput = document.getElementById("login-identifier");
-    const passwordInput   = document.getElementById("login-password");
-    const loginMessage    = document.getElementById("login-message");
-    const loginBtn        = document.getElementById("login-btn");
+    const passwordInput = document.getElementById("login-password");
+    const loginMessage = document.getElementById("login-message");
+    const loginBtn = document.getElementById("login-btn");
 
     function showMessage(message, isError = true) {
         loginMessage.textContent = message;
@@ -35,21 +35,21 @@ if (loginForm) {
         clearMessage();
 
         const usernameOrEmail = identifierInput.value.trim();
-        const password        = passwordInput.value;
+        const password = passwordInput.value;
 
         if (!usernameOrEmail || !password) {
             showMessage("Favor ingresar información válida en los campos obligatorios.");
             return;
         }
 
-        loginBtn.disabled   = true;
-        loginBtn.innerHTML  = '<svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Verificando...';
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Verificando...';
 
         try {
             const response = await fetch("http://localhost:8000/token", {
-                method:  "POST",
+                method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body:    new URLSearchParams({ username: usernameOrEmail, password })
+                body: new URLSearchParams({ username: usernameOrEmail, password })
             });
 
             const data = await response.json();
@@ -66,7 +66,7 @@ if (loginForm) {
         } catch (_) {
             showMessage("No fue posible conectar con el servidor. Verifica que el backend esté activo.");
         } finally {
-            loginBtn.disabled  = false;
+            loginBtn.disabled = false;
             loginBtn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> Iniciar Sesión';
         }
     });
@@ -110,25 +110,40 @@ if (vacanciesList) {
 
     // --- Perfil del candidato (vacío hasta que suba el CV) ---
     const candidate = {
-        id:               "C001",
-        name:             localStorage.getItem("username") || "Candidato Demo",
-        skills:           [],
+        id: "C001",
+        name: localStorage.getItem("username") || "Candidato Demo",
+        skills: [],
         experience_years: 0
     };
 
     // --- Motor de scoring ---
     function computeScore(job) {
-        const matched    = candidate.skills.filter(s => job.required_skills.includes(s)).length;
+        const matched = candidate.skills.filter(s => job.required_skills.includes(s)).length;
         const skillScore = job.required_skills.length > 0
             ? (matched / job.required_skills.length) * 100
             : 0;
-        const expScore   = candidate.experience_years >= job.min_experience_years
+        const expScore = candidate.experience_years >= job.min_experience_years
             ? 100
             : (job.min_experience_years > 0
                 ? (candidate.experience_years / job.min_experience_years) * 100
                 : 0);
         return Math.round((skillScore * 0.7) + (expScore * 0.3));
     }
+
+    window.runMatchingFromCV = function (data) {
+        candidate.name = data.nombre;
+        candidate.skills = data.skills ? data.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
+        candidate.experience_years = data.expYears;
+
+        if (rawJobs.length > 0) {
+            jobs = rawJobs.map(j => ({ ...j, score: computeScore(j) })).sort((a, b) => b.score - a.score);
+            topJobs = jobs.filter(j => j.score >= 60);
+            otherJobs = jobs.filter(j => j.score >= 30 && j.score < 60);
+            renderVacancies();
+        } else {
+            loadJobs();
+        }
+    };
 
     // --- Vacantes ---
     let rawJobs = [];
@@ -137,24 +152,46 @@ if (vacanciesList) {
     let otherJobs = [];
 
     async function loadJobs() {
+        const list = document.getElementById("vacancies-list");
+        if (list) {
+            list.innerHTML = `
+                <div class="p-10 text-center flex flex-col items-center justify-center">
+                    <svg class="animate-spin h-8 w-8 text-brand-primary mb-4" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    <p class="text-slate-500 font-medium">Cargando vacantes...</p>
+                </div>
+            `;
+        }
+
         try {
             const response = await fetch("http://localhost:8000/jobs");
-            if (!response.ok) throw new Error("Error al obtener vacantes");
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
             rawJobs = await response.json();
-            
+
+            // Recalcular scores basados en el perfil actual
             jobs = rawJobs.map(j => ({ ...j, score: computeScore(j) })).sort((a, b) => b.score - a.score);
             topJobs = jobs.filter(j => j.score >= 60);
             otherJobs = jobs.filter(j => j.score >= 30 && j.score < 60);
-            
-            loadJobs();
+
+            // Solo renderizar si el fetch fue exitoso
+            renderVacancies();
         } catch (error) {
-            console.error("Error:", error);
-            const list = document.getElementById("vacancies-list");
-            if (list) list.innerHTML = `<p class='text-red-500'>Error cargando vacantes desde el servidor.</p>`;
+            console.error("Error cargando vacantes:", error);
+            if (list) {
+                list.innerHTML = `
+                    <div class="p-8 mt-4 text-center bg-red-50 border border-red-200 rounded-xl">
+                        <i class="fa-solid fa-triangle-exclamation text-red-500 text-3xl mb-3"></i>
+                        <p class='text-red-700 font-medium'>No se pudieron cargar las vacantes. Verifica la conexión.</p>
+                    </div>
+                `;
+            }
         }
     }
 
-            
+
     let selectedJobId = null;
     let appliedJobIds = new Set();
 
@@ -166,11 +203,11 @@ if (vacanciesList) {
 
     function renderCard(job, rank) {
         const isSelected = selectedJobId === job.id;
-        const isApplied  = appliedJobIds.has(job.id);
-        const matched    = candidate.skills.filter(s => job.required_skills.includes(s));
+        const isApplied = appliedJobIds.has(job.id);
+        const matched = candidate.skills.filter(s => job.required_skills.includes(s));
 
         let podiumIcon = "";
-        if (rank === 1)      podiumIcon = `<span title="#1 Top Match" class="rank-icon">💚</span>`;
+        if (rank === 1) podiumIcon = `<span title="#1 Top Match" class="rank-icon">💚</span>`;
         else if (rank === 2) podiumIcon = `<span title="#2 Top Match" class="rank-icon">💎</span>`;
         else if (rank === 3) podiumIcon = `<span title="#3 Top Match" class="rank-icon">🥇</span>`;
 
@@ -178,8 +215,8 @@ if (vacanciesList) {
         <div id="card-${job.id}" onclick="selectJob('${job.id}')"
              class="card-hover cursor-pointer p-4 rounded-xl border transition-all duration-200
                     ${isSelected
-                        ? "bg-slate-800 ring-2 ring-brand-primary border-transparent shadow-[0_0_20px_rgba(16,185,129,0.12)]"
-                        : "bg-slate-800/50 border-brand-border hover:bg-slate-800 hover:border-slate-500"}">
+                ? "bg-slate-800 ring-2 ring-brand-primary border-transparent shadow-[0_0_20px_rgba(16,185,129,0.12)]"
+                : "bg-slate-800/50 border-brand-border hover:bg-slate-800 hover:border-slate-500"}">
             <div class="flex justify-between items-start gap-2 mb-2">
                 <div class="min-w-0 flex items-start gap-2">
                     ${podiumIcon ? `<span class="text-base shrink-0 mt-0.5">${podiumIcon}</span>` : ""}
@@ -254,8 +291,8 @@ if (vacanciesList) {
     // Así tiene acceso a candidate, jobs, topJobs, otherJobs, computeScore, renderVacancies
     window.runMatchingFromCV = function (datos) {
         // Actualizar perfil del candidato con datos reales del CV
-        if (datos.nombre)   candidate.name             = datos.nombre;
-        if (datos.skills)   candidate.skills           = datos.skills.split(',').map(s => s.trim()).filter(Boolean);
+        if (datos.nombre) candidate.name = datos.nombre;
+        if (datos.skills) candidate.skills = datos.skills.split(',').map(s => s.trim()).filter(Boolean);
         if (datos.expYears) candidate.experience_years = Number(datos.expYears) || 0;
 
         // Recalcular scores
@@ -263,10 +300,10 @@ if (vacanciesList) {
         jobs.sort((a, b) => b.score - a.score);
 
         // Reclasificar
-        topJobs.length  = 0;
+        topJobs.length = 0;
         otherJobs.length = 0;
         jobs.forEach(j => {
-            if (j.score >= 60)      topJobs.push(j);
+            if (j.score >= 60) topJobs.push(j);
             else if (j.score >= 30) otherJobs.push(j);
         });
 
@@ -277,9 +314,9 @@ if (vacanciesList) {
         // Si había una vacante seleccionada, cerrarla para mostrar el ranking actualizado
         selectedJobId = null;
         const detailsContainer = document.getElementById("job-details-container");
-        const emptyState       = document.getElementById("empty-state");
+        const emptyState = document.getElementById("empty-state");
         if (detailsContainer) detailsContainer.classList.add("hidden");
-        if (emptyState)       emptyState.classList.remove("hidden");
+        if (emptyState) emptyState.classList.remove("hidden");
 
         loadJobs();
     };
@@ -289,15 +326,15 @@ if (vacanciesList) {
         selectedJobId = id;
         loadJobs();
 
-        const job              = jobs.find(j => j.id === id);
+        const job = jobs.find(j => j.id === id);
         if (!job) return;
         const detailsContainer = document.getElementById("job-details-container");
-        const emptyState       = document.getElementById("empty-state");
-        const isApplied        = appliedJobIds.has(job.id);
-        const matched          = candidate.skills.filter(s => job.required_skills.includes(s));
-        const missing          = job.required_skills.filter(s => !candidate.skills.includes(s));
+        const emptyState = document.getElementById("empty-state");
+        const isApplied = appliedJobIds.has(job.id);
+        const matched = candidate.skills.filter(s => job.required_skills.includes(s));
+        const missing = job.required_skills.filter(s => !candidate.skills.includes(s));
 
-        if (emptyState)       emptyState.classList.add("hidden");
+        if (emptyState) emptyState.classList.add("hidden");
         if (detailsContainer) detailsContainer.classList.remove("hidden");
 
         detailsContainer.innerHTML = `
@@ -337,8 +374,8 @@ if (vacanciesList) {
                     </h4>
                     <div class="flex flex-wrap gap-2">
                         ${matched.length > 0
-                            ? matched.map(s => `<span class="bg-brand-primary/10 text-brand-primary border border-brand-primary/30 px-3 py-1.5 rounded-lg text-sm font-medium">${s}</span>`).join("")
-                            : `<p class="text-slate-500 text-sm">Ninguna skill coincide aún</p>`}
+                ? matched.map(s => `<span class="bg-brand-primary/10 text-brand-primary border border-brand-primary/30 px-3 py-1.5 rounded-lg text-sm font-medium">${s}</span>`).join("")
+                : `<p class="text-slate-500 text-sm">Ninguna skill coincide aún</p>`}
                     </div>
                 </div>
                 <div class="bg-slate-800/80 border border-brand-border rounded-2xl p-5">
@@ -347,8 +384,8 @@ if (vacanciesList) {
                     </h4>
                     <div class="flex flex-wrap gap-2">
                         ${missing.length > 0
-                            ? missing.map(s => `<span class="bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1.5 rounded-lg text-sm">${s}</span>`).join("")
-                            : `<p class="text-brand-primary text-sm font-medium">¡Tienes todas las skills requeridas!</p>`}
+                ? missing.map(s => `<span class="bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1.5 rounded-lg text-sm">${s}</span>`).join("")
+                : `<p class="text-brand-primary text-sm font-medium">¡Tienes todas las skills requeridas!</p>`}
                     </div>
                 </div>
             </div>
@@ -405,8 +442,8 @@ if (vacanciesList) {
                     <i class="fa-solid fa-shield-halved mr-2 text-brand-primary"></i>Tu postulación es confidencial y segura.
                 </div>
                 ${isApplied
-                    ? `<div class="flex items-center gap-2 text-brand-primary font-bold"><i class="fa-solid fa-check-circle"></i><span>¡Ya te postulaste a esta vacante!</span></div>`
-                    : `<button onclick="submitApplication('${job.id}', '${job.title}', '${job.company}')" id="apply-btn-${job.id}"
+                ? `<div class="flex items-center gap-2 text-brand-primary font-bold"><i class="fa-solid fa-check-circle"></i><span>¡Ya te postulaste a esta vacante!</span></div>`
+                : `<button onclick="submitApplication('${job.id}', '${job.title}', '${job.company}')" id="apply-btn-${job.id}"
                                class="flex items-center gap-2 bg-brand-primary hover:bg-brand-hover text-white font-bold px-8 py-3.5 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.25)] hover:shadow-[0_0_35px_rgba(16,185,129,0.45)] transition-all duration-200 transform hover:-translate-y-0.5 whitespace-nowrap">
                                <i class="fa-solid fa-paper-plane"></i>Enviar Postulación
                            </button>`}
@@ -416,26 +453,33 @@ if (vacanciesList) {
 
     // --- Postulación ---
     window.submitApplication = async function (jobId, jobTitle, company) {
-        const spinner  = document.getElementById("loading-spinner");
+        const spinner = document.getElementById("loading-spinner");
         const applyBtn = document.getElementById(`apply-btn-${jobId}`);
 
         if (applyBtn) {
-            applyBtn.disabled  = true;
+            applyBtn.disabled = true;
             applyBtn.innerHTML = '<svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Enviando...';
         }
         if (spinner) spinner.classList.remove("hidden");
 
+        const fullJob = jobs.find(j => j.id === jobId);
+        
         try {
-            await fetch("http://localhost:5678/webhook/apply", {
-                method:  "POST",
+            const res = await fetch("http://localhost:5678/webhook/apply", {
+                method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body:    JSON.stringify({
-                    action:    "APPLICATION_SUBMITTED",
-                    candidate: { id: candidate.id, name: candidate.name },
-                    job:       { id: jobId, title: jobTitle, company }
+                body: JSON.stringify({
+                    action: "APPLICATION_SUBMITTED",
+                    candidate: candidate,
+                    job: fullJob || { id: jobId, title: jobTitle, company: company }
                 })
             });
-        } catch (_) { /* n8n puede no estar corriendo */ }
+            if (!res.ok) {
+                console.error("Error desde n8n:", res.status, await res.text());
+            }
+        } catch (error) { 
+            console.error("No se pudo conectar a n8n:", error);
+        }
 
         await new Promise(r => setTimeout(r, 1000));
         if (spinner) spinner.classList.add("hidden");
@@ -476,6 +520,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         mostrarEstadoCV('cargando');
+        startAIAnalysis();
 
         const formData = new FormData();
         formData.append('file', file);
@@ -483,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             const res = await fetch('http://localhost:8000/api/extraer-cv', {
                 method: 'POST',
-                body:   formData
+                body: formData
             });
 
             const datos = await res.json();
@@ -501,9 +546,9 @@ document.addEventListener('DOMContentLoaded', function () {
             // Disparar matching — campo exacto del backend: experiencia_anos (sin tilde)
             if (typeof window.runMatchingFromCV === 'function') {
                 window.runMatchingFromCV({
-                    nombre:   datos.nombre                         || '',
-                    skills:   (datos.habilidades || []).join(', '),
-                    expYears: datos.experiencia_anos               || 0
+                    nombre: datos.nombre || '',
+                    skills: (datos.habilidades || []).join(', '),
+                    expYears: datos.experiencia_anos || 0
                 });
             }
 
@@ -512,6 +557,8 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error('Error procesando CV:', error);
             mostrarEstadoCV('error', error.message || 'Error al conectar con el servidor.');
+        } finally {
+            stopAIAnalysis();
         }
 
         // Limpiar el input para permitir subir el mismo archivo de nuevo
@@ -521,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // --- Feedback visual del botón de CV ---
 function mostrarEstadoCV(estado, info) {
-    const div   = document.getElementById('cv-status');
+    const div = document.getElementById('cv-status');
     const label = document.getElementById('cvUpload-label');
     if (!div) return;
 
@@ -549,4 +596,90 @@ function mostrarEstadoCV(estado, info) {
             </p>`;
         if (label) label.textContent = 'Subir Hoja de Vida (PDF)';
     }
+}
+
+// --- AI Analysis Overlay ---
+function startAIAnalysis() {
+    const aiOverlay = document.getElementById("ai-overlay");
+    if (!aiOverlay) return;
+
+    // Reset styles if it's run multiple times without reloading
+    resetOverlayStyles();
+
+    // Show overlay
+    aiOverlay.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+
+    // Step animation
+    const steps = [
+        document.getElementById("step-1"),
+        document.getElementById("step-2"),
+        document.getElementById("step-3"),
+        document.getElementById("step-4"),
+    ];
+
+    const delays = [400, 1100, 1900, 2700];
+    const doneColor = "text-brand-primary";
+    const activeColor = "text-white";
+
+    steps.forEach((step, i) => {
+        if (!step) return;
+
+        // Activate step
+        setTimeout(() => {
+            step.classList.remove("text-slate-500");
+            step.classList.add(activeColor);
+            const dot = step.querySelector(".step-dot");
+            if (dot) {
+                dot.classList.remove("bg-slate-600");
+                dot.classList.add("bg-brand-primary", "animate-pulse");
+            }
+        }, delays[i]);
+
+        // Complete step
+        setTimeout(() => {
+            step.classList.remove(activeColor);
+            step.classList.add(doneColor);
+            const dot = step.querySelector(".step-dot");
+            if (dot) {
+                dot.classList.remove("animate-pulse");
+                dot.classList.add("hidden");
+                const check = step.querySelector(".fa-check");
+                if (check) check.classList.remove("hidden");
+            }
+        }, delays[i] + 600);
+    });
+
+    // Fire n8n webhook silently (fire-and-forget)
+    if(typeof triggerN8nSilently === 'function') {
+        triggerN8nSilently();
+    }
+}
+
+function stopAIAnalysis() {
+    const aiOverlay = document.getElementById("ai-overlay");
+    if (!aiOverlay) return;
+    
+    setTimeout(() => {
+        aiOverlay.classList.add("hidden");
+        document.body.style.overflow = "auto";
+    }, 800); // Dar un poco de tiempo para que se vea el último step completado
+}
+
+function resetOverlayStyles() {
+    const steps = [
+        document.getElementById("step-1"),
+        document.getElementById("step-2"),
+        document.getElementById("step-3"),
+        document.getElementById("step-4"),
+    ];
+    
+    steps.forEach((step) => {
+        if (!step) return;
+        step.className = "flex items-center gap-3 text-slate-500 transition-colors duration-500";
+        const dot = step.querySelector(".step-dot");
+        if(dot) dot.className = "w-2 h-2 rounded-full bg-slate-600 step-dot";
+        const check = step.querySelector(".fa-check");
+        if(check) check.classList.add("hidden");
+    });
 }
