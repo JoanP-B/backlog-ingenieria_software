@@ -66,6 +66,7 @@ async def login_for_access_token(
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
+    print(f"DEBUG: get_current_user received token: {token}")
     try:
         from jose import jwt, JWTError
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
@@ -125,17 +126,43 @@ async def calculate_score(
             "matched_skills": scoring_result["matched_skills"]
         }
 
-        audit_entry = AuditLog(
-            action="SCORING_COMPLETED",
-            candidate_id=candidate.id,
-            user_id=current_user.id,
-            job_id=job.id,
-            score=final_score,
-            details=details
+        # Buscar si ya existe una entrada de APPLICATION_SUBMITTED para este candidato y vacante
+        result = await db.execute(
+            select(AuditLog).filter(
+                AuditLog.candidate_id == candidate.id,
+                AuditLog.job_id == job.id,
+                AuditLog.action == "APPLICATION_SUBMITTED"
+            ).order_by(AuditLog.timestamp.desc())
         )
-        db.add(audit_entry)
-        await db.commit()
-        await db.refresh(audit_entry)
+        existing_log = result.scalars().first()
+
+        if existing_log:
+            # Si existe, la actualizamos para evitar duplicación
+            existing_log.action = "SCORING_COMPLETED"
+            existing_log.score = final_score
+            # Combinamos los detalles para mantener el título del puesto y la compañía
+            merged_details = {
+                "job_title": existing_log.details.get("job_title") if existing_log.details else None,
+                "company": existing_log.details.get("company") if existing_log.details else None,
+                **details
+            }
+            existing_log.details = merged_details
+            db.add(existing_log)
+            await db.commit()
+            await db.refresh(existing_log)
+        else:
+            # Si no existe (caso alternativo), creamos una nueva entrada
+            audit_entry = AuditLog(
+                action="SCORING_COMPLETED",
+                candidate_id=candidate.id,
+                user_id=current_user.id,
+                job_id=job.id,
+                score=final_score,
+                details=details
+            )
+            db.add(audit_entry)
+            await db.commit()
+            await db.refresh(audit_entry)
 
         return ScoringResponse(
             candidate_id=candidate.id,
@@ -144,7 +171,10 @@ async def calculate_score(
             details=details
         )
     except Exception as e:
-        return {"error": str(e), "status": 500, "message": "Failed to calculate score or save audit log."}
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to calculate score or save audit log: {str(e)}"
+        )
 
 
 # --- Candidate profile and application logging ---
@@ -173,15 +203,21 @@ async def save_candidate_profile(
     if candidate:
         candidate.skills = datos.skills
         candidate.experience_years = datos.experience_years
+        if datos.candidate_key:
+            candidate.candidate_key = datos.candidate_key
         await db.commit()
         await db.refresh(candidate)
         return candidate
+
+    import uuid
+    generated_key = datos.candidate_key or f"CAND-{uuid.uuid4().hex[:8].upper()}"
 
     candidate = Candidate(
         user_id=current_user.id,
         name=current_user.username,
         skills=datos.skills,
-        experience_years=datos.experience_years
+        experience_years=datos.experience_years,
+        candidate_key=generated_key
     )
     db.add(candidate)
     await db.commit()

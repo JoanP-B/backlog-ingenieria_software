@@ -80,10 +80,14 @@ async function fetchWithAuth(url, options = {}) {
     if (token) {
         headers.Authorization = `Bearer ${token}`;
     }
-    return fetch(url, {
+    const response = await fetch(url, {
         ...options,
         headers,
     });
+    if (response.status === 401) {
+        logout();
+    }
+    return response;
 }
 
 // ============================================================
@@ -112,6 +116,7 @@ if (vacanciesList) {
         candidate.name = profile.name;
         candidate.skills = profile.skills;
         candidate.experience_years = profile.experience_years;
+        candidate.candidate_key = profile.candidate_key;
         if (usernameDisplay) usernameDisplay.textContent = profile.name;
     }
 
@@ -129,6 +134,7 @@ if (vacanciesList) {
         candidate.id = profile.id;
         candidate.user_id = profile.user_id;
         candidate.name = profile.name;
+        candidate.candidate_key = profile.candidate_key;
         if (usernameDisplay) usernameDisplay.textContent = profile.name;
     }
 
@@ -540,7 +546,7 @@ if (vacanciesList) {
         await submitApplicationBackend(jobId, jobTitle, company);
         
         try {
-            const res = await fetch("http://localhost:5678/webhook/apply", {
+            const res = await fetchWithAuth("http://localhost:5678/webhook/apply", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

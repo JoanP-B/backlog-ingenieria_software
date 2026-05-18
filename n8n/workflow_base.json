@@ -34,6 +34,15 @@
             }
           ]
         },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{$node[\"Webhook\"].json[\"headers\"][\"authorization\"]}}"
+            }
+          ]
+        },
         "options": {}
       },
       "name": "Call FastAPI Scoring",

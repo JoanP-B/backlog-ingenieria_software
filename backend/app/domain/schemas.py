@@ -31,13 +31,15 @@ class CandidateSchema(BaseModel):
     name: str
     skills: List[str]
     experience_years: Optional[int] = None
-    created_at: datetime
+    candidate_key: Optional[str] = None
+    created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 class CandidateCreate(BaseModel):
     skills: List[str]
     experience_years: int
+    candidate_key: Optional[str] = None
 
 class ApplicationRequest(BaseModel):
     candidate_id: int
@@ -66,7 +68,7 @@ class ScoringRequest(BaseModel):
     job: JobSchema
 
 class ScoringResponse(BaseModel):
-    candidate_id: str
+    candidate_id: int
     job_id: str
     score: float
     details: Dict[str, Any]
