@@ -26,10 +26,24 @@ class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
 class CandidateSchema(BaseModel):
-    id: str
+    id: int
+    user_id: int
     name: str
     skills: List[str]
+    experience_years: Optional[int] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+class CandidateCreate(BaseModel):
+    skills: List[str]
     experience_years: int
+
+class ApplicationRequest(BaseModel):
+    candidate_id: int
+    job_id: str
+    job_title: str
+    company: str
 
 class JobSchema(BaseModel):
     id: str
@@ -61,7 +75,8 @@ class AuditLogSchema(BaseModel):
     id: int
     timestamp: datetime
     action: str
-    candidate_id: Optional[str] = None
+    user_id: Optional[int] = None
+    candidate_id: Optional[int] = None
     job_id: Optional[str] = None
     score: Optional[float] = None
     details: Optional[Dict[str, Any]] = None

@@ -72,6 +72,20 @@ if (loginForm) {
     });
 }
 
+async function fetchWithAuth(url, options = {}) {
+    const token = localStorage.getItem("access_token");
+    const headers = {
+        ...(options.headers || {}),
+    };
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+    return fetch(url, {
+        ...options,
+        headers,
+    });
+}
+
 // ============================================================
 // 2. DASHBOARD (dashboard.html)
 // ============================================================
@@ -89,12 +103,64 @@ if (vacanciesList) {
         usernameDisplay.textContent = localStorage.getItem("username") || "Usuario";
     }
 
+    async function loadCandidateProfile() {
+        const response = await fetchWithAuth("http://localhost:8000/api/candidates/me");
+        if (!response.ok) return;
+        const profile = await response.json();
+        candidate.id = profile.id;
+        candidate.user_id = profile.user_id;
+        candidate.name = profile.name;
+        candidate.skills = profile.skills;
+        candidate.experience_years = profile.experience_years;
+        if (usernameDisplay) usernameDisplay.textContent = profile.name;
+    }
+
+    async function saveCandidateProfile(data) {
+        const response = await fetchWithAuth("http://localhost:8000/api/candidates", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+            console.error("No se pudo guardar el perfil de candidato.", await response.text());
+            return;
+        }
+        const profile = await response.json();
+        candidate.id = profile.id;
+        candidate.user_id = profile.user_id;
+        candidate.name = profile.name;
+        if (usernameDisplay) usernameDisplay.textContent = profile.name;
+    }
+
+    async function submitApplicationBackend(jobId, jobTitle, company) {
+        if (!candidate.id) return;
+        try {
+            const response = await fetchWithAuth("http://localhost:8000/api/apply", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    candidate_id: candidate.id,
+                    job_id: jobId,
+                    job_title: jobTitle,
+                    company,
+                }),
+            });
+            if (!response.ok) {
+                console.error("Error guardando la postulación en el backend:", await response.text());
+            }
+        } catch (error) {
+            console.error("No se pudo conectar al backend para guardar la postulación:", error);
+        }
+    }
+
     // --- Toast si viene del flujo de análisis ---
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("analyzed") === "true") {
         showToast("success-toast", 4500);
         window.history.replaceState({}, document.title, "dashboard.html");
     }
+
+    loadCandidateProfile().catch(error => console.error("Error cargando perfil de candidato:", error));
 
     function showToast(id, duration = 4000) {
         const toast = document.getElementById(id);
@@ -110,7 +176,8 @@ if (vacanciesList) {
 
     // --- Perfil del candidato (vacío hasta que suba el CV) ---
     const candidate = {
-        id: "C001",
+        id: null,
+        user_id: null,
         name: localStorage.getItem("username") || "Candidato Demo",
         skills: [],
         experience_years: 0
@@ -289,11 +356,14 @@ if (vacanciesList) {
 
     // ─── Matching desde CV: DENTRO del bloque if(vacanciesList) ───────────────
     // Así tiene acceso a candidate, jobs, topJobs, otherJobs, computeScore, renderVacancies
-    window.runMatchingFromCV = function (datos) {
-        // Actualizar perfil del candidato con datos reales del CV
-        if (datos.nombre) candidate.name = datos.nombre;
+    window.runMatchingFromCV = async function (datos) {
         if (datos.skills) candidate.skills = datos.skills.split(',').map(s => s.trim()).filter(Boolean);
         if (datos.expYears) candidate.experience_years = Number(datos.expYears) || 0;
+
+        await saveCandidateProfile({
+            skills: candidate.skills,
+            experience_years: candidate.experience_years,
+        });
 
         // Recalcular scores
         jobs.forEach(j => { j.score = computeScore(j); });
@@ -306,10 +376,6 @@ if (vacanciesList) {
             if (j.score >= 60) topJobs.push(j);
             else if (j.score >= 30) otherJobs.push(j);
         });
-
-        // Actualizar nombre en la UI
-        const display = document.getElementById('current-user-display');
-        if (display && datos.nombre) display.textContent = datos.nombre;
 
         // Si había una vacante seleccionada, cerrarla para mostrar el ranking actualizado
         selectedJobId = null;
@@ -456,6 +522,13 @@ if (vacanciesList) {
         const spinner = document.getElementById("loading-spinner");
         const applyBtn = document.getElementById(`apply-btn-${jobId}`);
 
+        if (!candidate.id) {
+            await saveCandidateProfile({
+                skills: candidate.skills,
+                experience_years: candidate.experience_years,
+            });
+        }
+
         if (applyBtn) {
             applyBtn.disabled = true;
             applyBtn.innerHTML = '<svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Enviando...';
@@ -463,6 +536,8 @@ if (vacanciesList) {
         if (spinner) spinner.classList.remove("hidden");
 
         const fullJob = jobs.find(j => j.id === jobId);
+
+        await submitApplicationBackend(jobId, jobTitle, company);
         
         try {
             const res = await fetch("http://localhost:5678/webhook/apply", {
@@ -477,7 +552,7 @@ if (vacanciesList) {
             if (!res.ok) {
                 console.error("Error desde n8n:", res.status, await res.text());
             }
-        } catch (error) { 
+        } catch (error) {
             console.error("No se pudo conectar a n8n:", error);
         }
 

@@ -1,17 +1,8 @@
 -- init.sql: Inicialización de la base de datos para Job Matcher
 
-CREATE TABLE IF NOT EXISTS audit_logs (
-    id SERIAL PRIMARY KEY,
-    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    action VARCHAR(255) NOT NULL,
-    candidate_id VARCHAR(255),
-    job_id VARCHAR(255),
-    score DECIMAL(5,2),
-    details JSONB
-);
-
-CREATE INDEX idx_audit_logs_action ON audit_logs(action);
-CREATE INDEX idx_audit_logs_candidate_job ON audit_logs(candidate_id, job_id);
+DROP TABLE IF EXISTS audit_logs CASCADE;
+DROP TABLE IF EXISTS candidates CASCADE;
+DROP TABLE IF EXISTS jobs CASCADE;
 
 -- Tabla para usuarios
 CREATE TABLE IF NOT EXISTS users (
@@ -35,15 +26,31 @@ ON CONFLICT DO NOTHING;
 
 -- Tabla para candidatos
 CREATE TABLE IF NOT EXISTS candidates (
-    id VARCHAR(255) PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     skills JSONB NOT NULL,
     experience_years INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Tabla para audit logs
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id SERIAL PRIMARY KEY,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    action VARCHAR(255) NOT NULL,
+    candidate_id INTEGER NOT NULL REFERENCES candidates(id),
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    job_id VARCHAR(255),
+    score DECIMAL(5,2),
+    details JSONB
+);
+
+CREATE INDEX idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX idx_audit_logs_candidate_job ON audit_logs(candidate_id, job_id);
+CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
+
 -- Tabla para vacantes
-DROP TABLE IF EXISTS jobs CASCADE;
 CREATE TABLE IF NOT EXISTS jobs (
     id VARCHAR(255) PRIMARY KEY,
     title VARCHAR(255) NOT NULL,

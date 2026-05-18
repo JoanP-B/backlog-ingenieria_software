@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DECIMAL, DateTime, text, Boolean
+from sqlalchemy import Column, Integer, String, DECIMAL, DateTime, text, Boolean, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from app.infrastructure.database import Base
 
@@ -14,13 +14,25 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=text("CURRENT_TIMESTAMP"))
 
 
+class Candidate(Base):
+    __tablename__ = "candidates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    skills = Column(JSONB, nullable=False)
+    experience_years = Column(Integer)
+    created_at = Column(DateTime(timezone=True), server_default=text('CURRENT_TIMESTAMP'))
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True, index=True)
     timestamp = Column(DateTime(timezone=True), server_default=text('CURRENT_TIMESTAMP'))
     action = Column(String(255), nullable=False, index=True)
-    candidate_id = Column(String(255))
+    candidate_id = Column(Integer, ForeignKey("candidates.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     job_id = Column(String(255))
     score = Column(DECIMAL(5, 2))
     details = Column(JSONB)

@@ -8,8 +8,17 @@ from app.core import security
 from app.core.config import settings
 from app.infrastructure.database import get_db
 from typing import List
-from app.domain.schemas import Token, ScoringRequest, ScoringResponse, JobSchema
-from app.domain.models import AuditLog, User, Job
+from app.domain.schemas import (
+    Token,
+    ScoringRequest,
+    ScoringResponse,
+    JobSchema,
+    CandidateSchema,
+    CandidateCreate,
+    ApplicationRequest,
+    AuditLogSchema,
+)
+from app.domain.models import AuditLog, User, Job, Candidate
 from app.domain.scoring_engine import ScoringEngine
 
 router = APIRouter()
@@ -76,9 +85,26 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     return username
 
 
+async def get_current_user_obj(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+    username = await get_current_user(token)
+    result = await db.execute(select(User).filter(User.username == username))
+    user = result.scalars().first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario no encontrado.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+
 # --- Scoring ---
 @router.post("/score", response_model=ScoringResponse)
-async def calculate_score(request: ScoringRequest, db: AsyncSession = Depends(get_db)):
+async def calculate_score(
+    request: ScoringRequest,
+    current_user: User = Depends(get_current_user_obj),
+    db: AsyncSession = Depends(get_db)
+):
     try:
         candidate = request.candidate
         job = request.job
@@ -102,6 +128,7 @@ async def calculate_score(request: ScoringRequest, db: AsyncSession = Depends(ge
         audit_entry = AuditLog(
             action="SCORING_COMPLETED",
             candidate_id=candidate.id,
+            user_id=current_user.id,
             job_id=job.id,
             score=final_score,
             details=details
@@ -118,6 +145,80 @@ async def calculate_score(request: ScoringRequest, db: AsyncSession = Depends(ge
         )
     except Exception as e:
         return {"error": str(e), "status": 500, "message": "Failed to calculate score or save audit log."}
+
+
+# --- Candidate profile and application logging ---
+
+@router.get("/api/candidates/me", response_model=CandidateSchema)
+async def get_my_candidate_profile(
+    current_user: User = Depends(get_current_user_obj),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Candidate).filter(Candidate.user_id == current_user.id))
+    candidate = result.scalars().first()
+    if candidate is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfil de candidato no encontrado.")
+    return candidate
+
+
+@router.post("/api/candidates", response_model=CandidateSchema, status_code=201)
+async def save_candidate_profile(
+    datos: CandidateCreate,
+    current_user: User = Depends(get_current_user_obj),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Candidate).filter(Candidate.user_id == current_user.id))
+    candidate = result.scalars().first()
+
+    if candidate:
+        candidate.skills = datos.skills
+        candidate.experience_years = datos.experience_years
+        await db.commit()
+        await db.refresh(candidate)
+        return candidate
+
+    candidate = Candidate(
+        user_id=current_user.id,
+        name=current_user.username,
+        skills=datos.skills,
+        experience_years=datos.experience_years
+    )
+    db.add(candidate)
+    await db.commit()
+    await db.refresh(candidate)
+    return candidate
+
+
+@router.post("/api/apply", response_model=AuditLogSchema, status_code=201)
+async def apply_for_job(
+    application: ApplicationRequest,
+    current_user: User = Depends(get_current_user_obj),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Candidate).filter(
+            Candidate.id == application.candidate_id,
+            Candidate.user_id == current_user.id
+        )
+    )
+    candidate = result.scalars().first()
+    if candidate is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidato no encontrado.")
+
+    audit_entry = AuditLog(
+        action="APPLICATION_SUBMITTED",
+        candidate_id=candidate.id,
+        user_id=current_user.id,
+        job_id=application.job_id,
+        details={
+            "job_title": application.job_title,
+            "company": application.company
+        }
+    )
+    db.add(audit_entry)
+    await db.commit()
+    await db.refresh(audit_entry)
+    return audit_entry
 
 
 # --- Registration ---
