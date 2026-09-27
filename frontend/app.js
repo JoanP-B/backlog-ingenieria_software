@@ -2,6 +2,11 @@
 // app.js — Job Matcher AI — Lógica unificada del Frontend
 // ============================================================
 
+// URLs de servicios tomadas de config.js (window.APP_CONFIG).
+// Se usan valores por defecto locales si config.js no está cargado.
+const API_BASE = (window.APP_CONFIG && window.APP_CONFIG.API_BASE) || "http://localhost:8000";
+const N8N_BASE = (window.APP_CONFIG && window.APP_CONFIG.N8N_BASE) || "http://localhost:5678";
+
 function logout() {
     localStorage.removeItem("access_token");
     localStorage.removeItem("username");
@@ -46,7 +51,7 @@ if (loginForm) {
         loginBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Verificando...';
 
         try {
-            const response = await fetch("http://localhost:8000/token", {
+            const response = await fetch(`${API_BASE}/token`, {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
                 body: new URLSearchParams({ username: usernameOrEmail, password })
@@ -108,7 +113,7 @@ if (vacanciesList) {
     }
 
     async function loadCandidateProfile() {
-        const response = await fetchWithAuth("http://localhost:8000/api/candidates/me");
+        const response = await fetchWithAuth(`${API_BASE}/api/candidates/me`);
         if (!response.ok) return;
         const profile = await response.json();
         candidate.id = profile.id;
@@ -121,7 +126,7 @@ if (vacanciesList) {
     }
 
     async function saveCandidateProfile(data) {
-        const response = await fetchWithAuth("http://localhost:8000/api/candidates", {
+        const response = await fetchWithAuth(`${API_BASE}/api/candidates`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -141,7 +146,7 @@ if (vacanciesList) {
     async function submitApplicationBackend(jobId, jobTitle, company) {
         if (!candidate.id) return;
         try {
-            const response = await fetchWithAuth("http://localhost:8000/api/apply", {
+            const response = await fetchWithAuth(`${API_BASE}/api/apply`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -190,33 +195,43 @@ if (vacanciesList) {
     };
 
     // --- Motor de scoring ---
-    function computeScore(job) {
-        const matched = candidate.skills.filter(s => job.required_skills.includes(s)).length;
-        const skillScore = job.required_skills.length > 0
-            ? (matched / job.required_skills.length) * 100
-            : 0;
-        const expScore = candidate.experience_years >= job.min_experience_years
-            ? 100
-            : (job.min_experience_years > 0
-                ? (candidate.experience_years / job.min_experience_years) * 100
-                : 0);
-        return Math.round((skillScore * 0.7) + (expScore * 0.3));
+    // El cálculo vive en el backend (ScoringEngine). El frontend pide el score
+    // vía POST /score/preview y aplica los resultados a las vacantes.
+    // Devuelve un Map jobId -> score (0-100 redondeado).
+    async function fetchScores(jobList) {
+        if (!jobList || jobList.length === 0) return new Map();
+        try {
+            const response = await fetch(`${API_BASE}/score/preview`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    candidate: {
+                        skills: candidate.skills,
+                        experience_years: candidate.experience_years,
+                    },
+                    jobs: jobList,
+                }),
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            const scoreMap = new Map();
+            (data.results || []).forEach(r => scoreMap.set(r.job_id, Math.round(r.score)));
+            return scoreMap;
+        } catch (error) {
+            console.error("No se pudieron calcular los scores en el backend:", error);
+            return new Map();
+        }
     }
 
-    window.runMatchingFromCV = function (data) {
-        candidate.name = data.nombre;
-        candidate.skills = data.skills ? data.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
-        candidate.experience_years = data.expYears;
-
-        if (rawJobs.length > 0) {
-            jobs = rawJobs.map(j => ({ ...j, score: computeScore(j) })).sort((a, b) => b.score - a.score);
-            topJobs = jobs.filter(j => j.score >= 60);
-            otherJobs = jobs.filter(j => j.score >= 30 && j.score < 60);
-            renderVacancies();
-        } else {
-            loadJobs();
-        }
-    };
+    // Aplica los scores del backend a rawJobs y reclasifica en topJobs/otherJobs.
+    async function recomputeAndClassify() {
+        const scoreMap = await fetchScores(rawJobs);
+        jobs = rawJobs
+            .map(j => ({ ...j, score: scoreMap.get(j.id) ?? 0 }))
+            .sort((a, b) => b.score - a.score);
+        topJobs = jobs.filter(j => j.score >= 60);
+        otherJobs = jobs.filter(j => j.score >= 30 && j.score < 60);
+    }
 
     // --- Vacantes ---
     let rawJobs = [];
@@ -239,15 +254,13 @@ if (vacanciesList) {
         }
 
         try {
-            const response = await fetch("http://localhost:8000/jobs");
+            const response = await fetch(`${API_BASE}/jobs`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
             rawJobs = await response.json();
 
-            // Recalcular scores basados en el perfil actual
-            jobs = rawJobs.map(j => ({ ...j, score: computeScore(j) })).sort((a, b) => b.score - a.score);
-            topJobs = jobs.filter(j => j.score >= 60);
-            otherJobs = jobs.filter(j => j.score >= 30 && j.score < 60);
+            // Recalcular scores en el backend según el perfil actual
+            await recomputeAndClassify();
 
             // Solo renderizar si el fetch fue exitoso
             renderVacancies();
@@ -361,7 +374,7 @@ if (vacanciesList) {
     }
 
     // ─── Matching desde CV: DENTRO del bloque if(vacanciesList) ───────────────
-    // Así tiene acceso a candidate, jobs, topJobs, otherJobs, computeScore, renderVacancies
+    // Así tiene acceso a candidate, jobs, topJobs, otherJobs, recomputeAndClassify, renderVacancies
     window.runMatchingFromCV = async function (datos) {
         if (datos.skills) candidate.skills = datos.skills.split(',').map(s => s.trim()).filter(Boolean);
         if (datos.expYears) candidate.experience_years = Number(datos.expYears) || 0;
@@ -371,18 +384,6 @@ if (vacanciesList) {
             experience_years: candidate.experience_years,
         });
 
-        // Recalcular scores
-        jobs.forEach(j => { j.score = computeScore(j); });
-        jobs.sort((a, b) => b.score - a.score);
-
-        // Reclasificar
-        topJobs.length = 0;
-        otherJobs.length = 0;
-        jobs.forEach(j => {
-            if (j.score >= 60) topJobs.push(j);
-            else if (j.score >= 30) otherJobs.push(j);
-        });
-
         // Si había una vacante seleccionada, cerrarla para mostrar el ranking actualizado
         selectedJobId = null;
         const detailsContainer = document.getElementById("job-details-container");
@@ -390,6 +391,7 @@ if (vacanciesList) {
         if (detailsContainer) detailsContainer.classList.add("hidden");
         if (emptyState) emptyState.classList.remove("hidden");
 
+        // loadJobs() recalcula los scores en el backend (POST /score/preview) y renderiza.
         loadJobs();
     };
 
@@ -546,7 +548,7 @@ if (vacanciesList) {
         await submitApplicationBackend(jobId, jobTitle, company);
         
         try {
-            const res = await fetchWithAuth("http://localhost:5678/webhook/apply", {
+            const res = await fetchWithAuth(`${N8N_BASE}/webhook/apply`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -607,7 +609,7 @@ document.addEventListener('DOMContentLoaded', function () {
         formData.append('file', file);
 
         try {
-            const res = await fetch('http://localhost:8000/api/extraer-cv', {
+            const res = await fetch(`${API_BASE}/api/extraer-cv`, {
                 method: 'POST',
                 body: formData
             });
@@ -657,7 +659,7 @@ function mostrarEstadoCV(estado, info) {
         div.innerHTML = `
             <p class="flex items-center gap-2 text-xs text-blue-400 mt-1">
                 <i class="fa-solid fa-spinner fa-spin"></i>
-                Analizando CV con OpenAI...
+                Analizando CV con IA...
             </p>`;
         if (label) label.textContent = 'Procesando...';
 

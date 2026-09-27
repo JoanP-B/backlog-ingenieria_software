@@ -73,6 +73,30 @@ class ScoringResponse(BaseModel):
     score: float
     details: Dict[str, Any]
 
+
+class CandidateProfileInput(BaseModel):
+    """Perfil mínimo para calcular scores sin necesidad de un candidato persistido."""
+    skills: List[str] = []
+    experience_years: int = 0
+
+
+class ScorePreviewRequest(BaseModel):
+    """Solicita el score del candidato contra un conjunto de vacantes, sin persistir."""
+    candidate: CandidateProfileInput
+    jobs: List[JobSchema]
+
+
+class JobScorePreview(BaseModel):
+    job_id: str
+    score: float
+    skill_match_count: int
+    total_required: int
+    matched_skills: List[str]
+
+
+class ScorePreviewResponse(BaseModel):
+    results: List[JobScorePreview]
+
 class AuditLogSchema(BaseModel):
     id: int
     timestamp: datetime

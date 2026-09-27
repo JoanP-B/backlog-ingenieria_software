@@ -4,14 +4,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from datetime import timedelta
 
+import logging
+
 from app.core import security
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 from app.infrastructure.database import get_db
 from typing import List
 from app.domain.schemas import (
     Token,
     ScoringRequest,
     ScoringResponse,
+    ScorePreviewRequest,
+    ScorePreviewResponse,
+    JobScorePreview,
     JobSchema,
     CandidateSchema,
     CandidateCreate,
@@ -51,7 +58,7 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if password != "Admin123*" and not security.verify_password(password, user.hashed_password):
+    if not security.verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Correo o contraseña incorrectos. Intente nuevamente.",
@@ -66,7 +73,6 @@ async def login_for_access_token(
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
-    print(f"DEBUG: get_current_user received token: {token}")
     try:
         from jose import jwt, JWTError
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
@@ -170,11 +176,42 @@ async def calculate_score(
             score=final_score,
             details=details
         )
-    except Exception as e:
+    except Exception:
+        logger.exception("Failed to calculate score or save audit log")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to calculate score or save audit log: {str(e)}"
+            detail="No se pudo calcular el score. Intenta nuevamente más tarde."
         )
+
+
+@router.post("/score/preview", response_model=ScorePreviewResponse)
+async def score_preview(request: ScorePreviewRequest):
+    """
+    Calcula el score del candidato contra una lista de vacantes usando el mismo
+    motor de scoring del backend (ScoringEngine), SIN persistir auditoría.
+
+    Pensado para el ranking en tiempo real del frontend: así el cálculo vive en
+    un único lugar (backend) y no se duplica la lógica en el cliente.
+    """
+    candidate = request.candidate
+    results = []
+    for job in request.jobs:
+        result = ScoringEngine.compute_final_match(
+            candidate_skills=candidate.skills,
+            candidate_experience=candidate.experience_years,
+            required_skills=job.required_skills,
+            required_experience=job.min_experience_years or 0,
+        )
+        results.append(
+            JobScorePreview(
+                job_id=job.id,
+                score=result["final_score"],
+                skill_match_count=result["skill_match_count"],
+                total_required=result["total_required"],
+                matched_skills=result["matched_skills"],
+            )
+        )
+    return ScorePreviewResponse(results=results)
 
 
 # --- Candidate profile and application logging ---
@@ -306,7 +343,10 @@ async def registrar_usuario(datos: UsuarioRegistro, db: AsyncSession = Depends(g
         raise HTTPException(status_code=409, detail="Ya existe una cuenta con ese correo electrónico o nombre único.")
 
 @router.get("/api/usuarios", response_model=list[UsuarioRespuesta])
-async def listar_usuarios(db: AsyncSession = Depends(get_db)):
+async def listar_usuarios(
+    current_user: User = Depends(get_current_user_obj),
+    db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(select(User).order_by(User.created_at.desc()))
     usuarios = result.scalars().all()
     return [
@@ -320,36 +360,14 @@ async def listar_usuarios(db: AsyncSession = Depends(get_db)):
     ]
 
 
-# --- Extracción de CV con OpenAI para matching de vacantes ---
+# --- Extracción de CV con Google Gemini para matching de vacantes ---
 import json as json_lib
-import base64
-from openai import OpenAI
+from google import genai
+from google.genai import types
 from fastapi import UploadFile, File
+from fastapi.concurrency import run_in_threadpool
 
-@router.post("/api/extraer-cv")
-async def extraer_cv(file: UploadFile = File(...)):
-    if not settings.OPENAI_API_KEY:
-        raise HTTPException(
-            status_code=500,
-            detail="OPENAI_API_KEY no configurada en el servidor."
-        )
-
-    if file.content_type != "application/pdf":
-        raise HTTPException(
-            status_code=400,
-            detail="Solo se aceptan archivos PDF."
-        )
-
-    contenido = await file.read()
-
-    try:
-        client = OpenAI(api_key=settings.OPENAI_API_KEY)
-
-        # Subir el PDF a OpenAI Files API
-        archivo_tuple = ("hoja_de_vida.pdf", contenido, "application/pdf")
-        archivo_openai = client.files.create(file=archivo_tuple, purpose="assistants")
-
-        prompt = """Analiza esta hoja de vida y extrae la informacion para hacer matching con ofertas laborales.
+_CV_PROMPT = """Analiza esta hoja de vida y extrae la informacion para hacer matching con ofertas laborales.
 Responde UNICAMENTE con JSON valido, sin backticks ni texto adicional.
 Usa exactamente esta estructura:
 {
@@ -367,24 +385,46 @@ Notas:
 - ubicacion solo ciudad y pais.
 - Si algun dato no esta disponible deja el string vacio o el numero en 0."""
 
-        # Usar Responses API con soporte de archivos
-        respuesta = client.responses.create(
-            model="gpt-4o-mini",
-            input=[{
-                "role": "user",
-                "content": [
-                    {"type": "input_file", "file_id": archivo_openai.id},
-                    {"type": "input_text", "text": prompt}
-                ]
-            }]
+
+def _extraer_cv_gemini(contenido: bytes) -> str:
+    """Llama a Gemini con el PDF inline y devuelve el texto de la respuesta.
+
+    Es una función síncrona (el SDK de google-genai es síncrono); se ejecuta en
+    un threadpool desde el endpoint async para no bloquear el event loop.
+    """
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    respuesta = client.models.generate_content(
+        model=settings.GEMINI_MODEL,
+        contents=[
+            types.Part.from_bytes(data=contenido, mime_type="application/pdf"),
+            _CV_PROMPT,
+        ],
+        config=types.GenerateContentConfig(response_mime_type="application/json"),
+    )
+    return (respuesta.text or "").strip()
+
+
+@router.post("/api/extraer-cv")
+async def extraer_cv(file: UploadFile = File(...)):
+    if not settings.GEMINI_API_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="GEMINI_API_KEY no configurada en el servidor."
         )
 
-        texto = respuesta.output_text.strip()
+    if file.content_type != "application/pdf":
+        raise HTTPException(
+            status_code=400,
+            detail="Solo se aceptan archivos PDF."
+        )
 
-        # Eliminar el archivo subido de OpenAI
-        client.files.delete(archivo_openai.id)
+    contenido = await file.read()
 
-        # Limpiar backticks si OpenAI los agrega
+    try:
+        texto = await run_in_threadpool(_extraer_cv_gemini, contenido)
+
+        # Limpiar backticks si el modelo los agrega (defensa extra; con
+        # response_mime_type=application/json no deberían aparecer).
         if texto.startswith("```"):
             texto = texto.split("```")[1]
             if texto.startswith("json"):
@@ -399,10 +439,11 @@ Notas:
             status_code=422,
             detail="La IA no pudo estructurar los datos del CV. Intenta con otro archivo."
         )
-    except Exception as e:
+    except Exception:
+        logger.exception("Error al procesar el CV")
         raise HTTPException(
             status_code=500,
-            detail=f"Error al procesar el CV: {str(e)}"
+            detail="No se pudo procesar el CV. Intenta con otro archivo o más tarde."
         )
 
 # --- Job Fetching ---

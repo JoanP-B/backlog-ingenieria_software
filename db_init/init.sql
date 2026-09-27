@@ -1,4 +1,11 @@
 -- init.sql: Inicialización de la base de datos para Job Matcher
+-- Nota: este script solo se ejecuta la primera vez que se crea el volumen de
+-- PostgreSQL (directorio de datos vacío). Todas las creaciones usan
+-- "CREATE TABLE IF NOT EXISTS" y las inserciones son idempotentes.
+--
+-- Se eliminan las tablas dependientes en orden (de hija a padre) para permitir
+-- una reinicialización limpia si se ejecuta manualmente. "users" se conserva
+-- porque su inserción usa ON CONFLICT DO NOTHING y es referenciada por las demás.
 
 DROP TABLE IF EXISTS audit_logs CASCADE;
 DROP TABLE IF EXISTS candidates CASCADE;
@@ -31,6 +38,7 @@ CREATE TABLE IF NOT EXISTS candidates (
     name VARCHAR(255) NOT NULL,
     skills JSONB NOT NULL,
     experience_years INTEGER,
+    candidate_key VARCHAR(255) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
